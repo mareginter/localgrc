@@ -1,0 +1,74 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<p><a href="{% url 'risk_list' %}"> Back to risks</a></p>
+<h1>{{ risk.code }}  {{ risk.title }}</h1>
+<p>
+  <strong>Category:</strong> {{ risk.get_category_display }} |
+  <strong>Status:</strong> {{ risk.get_status_display }} |
+  <strong>Level:</strong> {{ risk.risk_level }} |
+  <a href="{% url 'risk_update' risk.pk %}">Edit</a>
+</p>
+<p><strong>Owner:</strong> {{ risk.owner.full_name|default:"" }}
+  {% if risk.department %} | <strong>Department:</strong> {{ risk.department }}{% endif %}
+</p>
+{% if risk.description %}<p>{{ risk.description|linebreaks }}</p>{% endif %}
+
+<h2 style="margin-top:2rem;">Assessments</h2>
+<table style="width:100%;border-collapse:collapse;">
+  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
+    <th style="padding:0.4rem;">Type</th><th>Likelihood</th><th>Impact</th><th>Score</th><th>Current</th><th>By</th><th>At</th>
+  </tr></thead>
+  <tbody>
+    {% for a in risk.assessments.all %}
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:0.4rem;">{{ a.get_type_display }}</td>
+        <td>{{ a.likelihood }}</td><td>{{ a.impact }}</td>
+        <td><strong>{{ a.score }}</strong></td>
+        <td>{% if a.is_current %}{% endif %}</td>
+        <td>{{ a.assessed_by.full_name|default:"" }}</td>
+        <td>{{ a.assessed_at|date:"Y-m-d" }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" style="padding:0.6rem;color:#666;">No assessments yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<details style="margin:1rem 0;">
+  <summary style="cursor:pointer;">+ Add assessment</summary>
+  <form method="post" action="{% url 'assessment_create' risk.pk %}" style="margin-top:0.5rem;">
+    {% csrf_token %}
+    {{ assessment_form.as_p }}
+    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+  </form>
+</details>
+
+<h2 style="margin-top:2rem;">Treatments</h2>
+<table style="width:100%;border-collapse:collapse;">
+  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
+    <th style="padding:0.4rem;">Strategy</th><th>Description</th><th>Responsible</th><th>Due</th><th>Status</th>
+  </tr></thead>
+  <tbody>
+    {% for t in risk.treatments.all %}
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:0.4rem;">{{ t.get_strategy_display }}</td>
+        <td>{{ t.description|truncatechars:80 }}</td>
+        <td>{{ t.responsible.full_name|default:"" }}</td>
+        <td>{{ t.due_date|default:"" }}</td>
+        <td>{{ t.get_status_display }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" style="padding:0.6rem;color:#666;">No treatments yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<details style="margin:1rem 0;">
+  <summary style="cursor:pointer;">+ Add treatment</summary>
+  <form method="post" action="{% url 'treatment_create' risk.pk %}" style="margin-top:0.5rem;">
+    {% csrf_token %}
+    {{ treatment_form.as_p }}
+    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+  </form>
+</details>
+{% endblock %}

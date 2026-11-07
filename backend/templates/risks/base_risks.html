@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:900px;margin:2rem auto;">
+  <nav style="margin-bottom:1.5rem;display:flex;gap:1rem;border-bottom:1px solid #ddd;padding-bottom:0.5rem;">
+    <a href="{% url 'home' %}">Home</a>
+    <a href="{% url 'risk_list' %}">Risks</a>
+    <a href="{% url 'risk_matrix' %}">Matrix</a>
+    <a href="{% url 'asset_list' %}">Assets</a>
+    <a href="/admin/" style="margin-left:auto;">Admin</a>
+  </nav>
+  {% if messages %}
+    {% for m in messages %}
+      <div style="padding:0.5rem 1rem;margin:0.5rem 0;border-radius:4px;
+        background:{% if m.tags == 'error' %}#fee{% else %}#e7f7e7{% endif %};">
+        {{ m }}
+      </div>
+    {% endfor %}
+  {% endif %}
+  {% block risks_content %}{% endblock %}
+</div>
+{% endblock %}

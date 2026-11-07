@@ -1,0 +1,48 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<h1>Risks</h1>
+<p>
+  <a href="{% url 'risk_create' %}" style="padding:0.4rem 1rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;">+ New risk</a>
+  <a href="{% url 'risk_matrix' %}" style="margin-left:0.5rem;">View matrix</a>
+</p>
+<form method="get" style="margin:1rem 0;">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search code or title" style="padding:0.4rem;">
+  <select name="status" style="padding:0.4rem;">
+    <option value="">All statuses</option>
+    {% for v,l in status_choices %}<option value="{{ v }}" {% if v == status %}selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select>
+  <select name="category" style="padding:0.4rem;">
+    <option value="">All categories</option>
+    {% for v,l in category_choices %}<option value="{{ v }}" {% if v == category %}selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select>
+  <button type="submit" style="padding:0.4rem 0.8rem;">Filter</button>
+</form>
+<table style="width:100%;border-collapse:collapse;">
+  <thead><tr style="border-bottom:2px solid #ddd;text-align:left;">
+    <th style="padding:0.5rem;">Code</th><th>Title</th><th>Category</th>
+    <th>Status</th><th>Residual</th><th>Level</th><th>Owner</th>
+  </tr></thead>
+  <tbody>
+    {% for r in page %}
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:0.5rem;"><a href="{% url 'risk_detail' r.pk %}">{{ r.code }}</a></td>
+        <td>{{ r.title }}</td>
+        <td>{{ r.get_category_display }}</td>
+        <td>{{ r.get_status_display }}</td>
+        <td>{{ r.residual_score|default:"" }}</td>
+        <td>{{ r.risk_level }}</td>
+        <td>{{ r.owner.full_name|default:"" }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" style="padding:1rem;text-align:center;color:#666;">No risks yet. Create one to get started.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% if page.has_other_pages %}
+  <p style="margin-top:1rem;">
+    {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}"> prev</a>{% endif %}
+    Page {{ page.number }} of {{ page.paginator.num_pages }}
+    {% if page.has_next %}<a href="?page={{ page.next_page_number }}">next </a>{% endif %}
+  </p>
+{% endif %}
+{% endblock %}

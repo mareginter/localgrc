@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Login — LocalGRC{% endblock %}
+{% block content %}
+  <h1>LocalGRC</h1>
+  <p>Governance, Risk &amp; Compliance — self-hosted</p>
+  {% if form.errors %}
+    <p style="color:#b91c1c">Credenciais inválidas. Tenta novamente.</p>
+  {% endif %}
+  <form method="post" action="{% url 'login' %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Entrar</button>
+  </form>
+{% endblock %}

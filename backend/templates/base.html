@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}LocalGRC{% endblock %}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 480px; margin: 4rem auto; padding: 0 1rem; }
+    h1 { margin-bottom: 0.25rem; }
+    form p { margin: 0.75rem 0; }
+    input[type=text], input[type=password], input[type=email] {
+      padding: 0.5rem; width: 100%; box-sizing: border-box; font-size: 1rem;
+    }
+    button { padding: 0.6rem 1.2rem; cursor: pointer; font-size: 1rem; }
+    .errorlist { color: #b91c1c; list-style: none; padding: 0; }
+  </style>
+</head>
+<body>
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>

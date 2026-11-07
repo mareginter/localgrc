@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-localgrc}
+      POSTGRES_USER: ${POSTGRES_USER:-localgrc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-localgrc} -d ${POSTGRES_DB:-localgrc}"]
+      interval: 10s
+      retries: 5
+
+  app:
+    build: { context: ./backend }
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DJANGO_SETTINGS_MODULE: localgrc.settings
+      DJANGO_DEBUG: "false"
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?set DJANGO_SECRET_KEY}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:8080}
+      DATABASE_URL: postgres://${POSTGRES_USER:-localgrc}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-localgrc}
+      LOCALGRC_ADMIN_EMAIL: ${LOCALGRC_ADMIN_EMAIL:-admin@local}
+      LOCALGRC_ADMIN_PASSWORD: ${LOCALGRC_ADMIN_PASSWORD:-admin}
+      LOCALGRC_ADMIN_ORG_NAME: ${LOCALGRC_ADMIN_ORG_NAME:-Default Organization}
+    volumes: [uploads:/data/uploads]
+    expose: ["8000"]
+
+  web:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on: [app]
+    ports: ["${HTTP_PORT:-8080}:80"]
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - uploads:/data/uploads:ro
+
+volumes:
+  pgdata:
+  uploads:

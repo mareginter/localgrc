@@ -1,0 +1,44 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<h1>Risk matrix</h1>
+<p><a href="{% url 'risk_list' %}"> Back to list</a></p>
+<p style="color:#555;">Cells show residual risk (or inherent if no residual assessment). Score = Likelihood -- Impact.</p>
+<table style="border-collapse:collapse;margin-top:1rem;">
+  <tr>
+    <th style="padding:0.5rem;">Impact  / Likelihood </th>
+    {% for i in "12345" %}<th style="padding:0.5rem;">{{ forloop.counter }}</th>{% endfor %}
+  </tr>
+  {% for row in matrix %}
+    <tr>
+      <th style="padding:0.5rem;text-align:right;">{{ row.0.impact }}</th>
+      {% for cell in row %}
+        {% if cell.score >= 20 %}
+          {% with bg="#dc2626" %}
+          <td style="background:{{ bg }};color:#fff;padding:0.5rem;min-width:80px;vertical-align:top;">
+            <div style="font-size:0.75rem;">{{ cell.score }}</div>
+            {% for r in cell.risks %}
+              <div style="font-size:0.7rem;"><a href="{% url 'risk_detail' r.pk %}" style="color:#fff;">{{ r.code }}</a></div>
+            {% endfor %}
+          </td>
+          {% endwith %}
+        {% elif cell.score >= 12 %}
+          <td style="background:#ea580c;color:#fff;padding:0.5rem;vertical-align:top;">
+            <div style="font-size:0.75rem;">{{ cell.score }}</div>
+            {% for r in cell.risks %}<div style="font-size:0.7rem;"><a href="{% url 'risk_detail' r.pk %}" style="color:#fff;">{{ r.code }}</a></div>{% endfor %}
+          </td>
+        {% elif cell.score >= 6 %}
+          <td style="background:#f59e0b;color:#000;padding:0.5rem;vertical-align:top;">
+            <div style="font-size:0.75rem;">{{ cell.score }}</div>
+            {% for r in cell.risks %}<div style="font-size:0.7rem;"><a href="{% url 'risk_detail' r.pk %}" style="color:#000;">{{ r.code }}</a></div>{% endfor %}
+          </td>
+        {% else %}
+          <td style="background:#16a34a;color:#fff;padding:0.5rem;vertical-align:top;">
+            <div style="font-size:0.75rem;">{{ cell.score }}</div>
+            {% for r in cell.risks %}<div style="font-size:0.7rem;"><a href="{% url 'risk_detail' r.pk %}" style="color:#fff;">{{ r.code }}</a></div>{% endfor %}
+          </td>
+        {% endif %}
+      {% endfor %}
+    </tr>
+  {% endfor %}
+</table>
+{% endblock %}

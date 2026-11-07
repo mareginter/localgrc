@@ -1,0 +1,23 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<h1>Assets</h1>
+<p><a href="{% url 'asset_create' %}" style="padding:0.4rem 1rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;">+ New asset</a></p>
+<table style="width:100%;border-collapse:collapse;">
+  <thead><tr style="border-bottom:2px solid #ddd;text-align:left;">
+    <th style="padding:0.5rem;">Name</th><th>Type</th><th>Criticality</th><th>Classification</th><th>Owner</th>
+  </tr></thead>
+  <tbody>
+    {% for a in assets %}
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:0.5rem;">{{ a.name }}</td>
+        <td>{{ a.get_type_display }}</td>
+        <td>{{ a.get_criticality_display }}</td>
+        <td>{{ a.get_classification_display }}</td>
+        <td>{{ a.owner.full_name|default:"" }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" style="padding:1rem;text-align:center;color:#666;">No assets yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
