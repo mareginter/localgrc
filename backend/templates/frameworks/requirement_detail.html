@@ -1,0 +1,26 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<p>
+  <a href="{% url 'framework_detail' requirement.framework_version.framework.pk %}">
+    &lt;- Back to {{ requirement.framework_version.framework.name }}
+  </a>
+</p>
+<h1>{{ requirement.code }} -- {{ requirement.title }}</h1>
+<p>
+  <strong>Framework:</strong> {{ requirement.framework_version.framework.name }}
+  {{ requirement.framework_version.version }} |
+  <strong>Category:</strong> {{ requirement.category|default:"-" }}
+  {% if requirement.parent %} | <strong>Parent:</strong> {{ requirement.parent.code }}{% endif %}
+</p>
+{% if requirement.description %}
+  <p>{{ requirement.description|linebreaks }}</p>
+{% endif %}
+{% if requirement.children.all %}
+  <h2 style="margin-top:2rem;">Sub-requirements</h2>
+  <ul>
+    {% for child in requirement.children.all %}
+      <li><a href="{% url 'requirement_detail' child.pk %}">{{ child.code }} -- {{ child.title }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}
