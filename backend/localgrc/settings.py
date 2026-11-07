@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.risks",
     "apps.frameworks",
+    "apps.controls",
 ]
 
 MIDDLEWARE = [

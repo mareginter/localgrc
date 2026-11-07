@@ -266,6 +266,11 @@ class WorkflowInstance(models.Model):
         indexes = [models.Index(fields=["content_type", "object_id"])]
 
     def can_transition(self, user, to_state):
+        # Superusers always pass RBAC checks
+        if getattr(user, "is_superuser", False):
+            return self.definition.transitions.filter(
+                from_state=self.current_state, to_state=to_state
+            ).exists()
         try:
             transition = self.definition.transitions.get(from_state=self.current_state, to_state=to_state)
         except WorkflowTransition.DoesNotExist:
@@ -275,6 +280,15 @@ class WorkflowInstance(models.Model):
                 user=user, role=transition.required_role,
                 organization_id=self.definition.organization_id, deleted_at__isnull=True,
             ).exists()
+            # Also allow users with the 'admin' role inside this org
+            if not has_role:
+                admin_role = Role.objects.filter(code="admin").first()
+                if admin_role and UserRole.objects.filter(
+                    user=user, role=admin_role,
+                    organization_id=self.definition.organization_id,
+                    deleted_at__isnull=True,
+                ).exists():
+                    has_role = True
             if not has_role:
                 return False
         return True

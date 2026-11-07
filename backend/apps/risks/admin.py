@@ -50,3 +50,11 @@ class RiskTreatmentAdmin(admin.ModelAdmin):
 
 
 admin.site.register(RiskAsset)
+
+from .models import RiskControl
+
+@admin.register(RiskControl)
+class RiskControlAdmin(admin.ModelAdmin):
+    list_display = ("risk", "control", "effectiveness")
+    list_filter = ("effectiveness",)
+    search_fields = ("risk__code", "control__code")

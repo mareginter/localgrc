@@ -10,5 +10,8 @@ def home(request):
         '<p><a href="/risks/">Risks</a> | '
         '<a href="/risks/matrix/">Matrix</a> | '
         '<a href="/risks/assets/">Assets</a> | '
+        '<a href="/frameworks/">Frameworks</a> | '
+        '<a href="/controls/">Controls</a> | '
+        '<a href="/controls/coverage/">Coverage</a> | '
         '<a href="/admin/">Admin</a></p>'
     )

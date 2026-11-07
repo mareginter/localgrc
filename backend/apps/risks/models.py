@@ -161,3 +161,24 @@ class RiskAsset(BaseModel):
 
     class Meta(BaseModel.Meta):
         pass
+class RiskControl(BaseModel):
+    EFFECTIVENESS_CHOICES = [
+        ("unknown", "Unknown"),
+        ("low", "Low"),
+        ("medium", "Medium"),
+        ("high", "High"),
+    ]
+
+    risk = models.ForeignKey(Risk, on_delete=models.CASCADE, related_name="control_links")
+    control = models.ForeignKey(
+        "controls.Control", on_delete=models.CASCADE, related_name="risk_links"
+    )
+    effectiveness = models.CharField(max_length=16, choices=EFFECTIVENESS_CHOICES, default="unknown")
+
+    class Meta(BaseModel.Meta):
+        constraints = [
+            models.UniqueConstraint(fields=["risk", "control"], name="uniq_risk_control")
+        ]
+
+    def __str__(self):
+        return f"{self.risk.code} <- {self.control.code} ({self.effectiveness})"

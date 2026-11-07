@@ -1,0 +1,41 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<h1>Coverage by framework</h1>
+<p><a href="{% url 'control_list' %}">&lt;- Back to controls</a></p>
+<p style="color:#555;">Percentage of requirements fully covered by at least one control.</p>
+
+{% if coverage_data %}
+  <table style="width:100%;border-collapse:collapse;margin-top:1rem;">
+    <thead><tr style="border-bottom:2px solid #ddd;text-align:left;">
+      <th style="padding:0.5rem;">Framework</th>
+      <th>Total</th><th>Full</th><th>Partial</th><th>N/A</th><th>Uncovered</th><th>Coverage %</th>
+    </tr></thead>
+    <tbody>
+      {% for row in coverage_data %}
+        <tr style="border-bottom:1px solid #eee;">
+          <td style="padding:0.5rem;">
+            <a href="{% url 'framework_detail' row.framework.pk %}">{{ row.framework.name }} {{ row.version.version }}</a> <a href="{% url 'soa_export' row.framework.pk %}" style="margin-left:0.5rem;font-size:0.85rem;">Export SoA CSV</a>
+          </td>
+          <td>{{ row.total }}</td>
+          <td>{{ row.full }}</td>
+          <td>{{ row.partial }}</td>
+          <td>{{ row.na }}</td>
+          <td>{{ row.uncovered }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <div style="flex:1;background:#e5e7eb;height:8px;border-radius:4px;min-width:80px;">
+                <div style="background:#16a34a;height:8px;border-radius:4px;width:{{ row.pct }}%;"></div>
+              </div>
+              <span>{{ row.pct }}%</span>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p style="padding:1rem;background:#fef3c7;border-radius:4px;">
+    No frameworks found. Run <code>python manage.py seed_frameworks</code> first.
+  </p>
+{% endif %}
+{% endblock %}
