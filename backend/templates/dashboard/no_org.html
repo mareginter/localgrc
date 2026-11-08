@@ -1,0 +1,8 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<h1>No organization</h1>
+<p style="padding:1rem;background:#fef3c7;border-radius:4px;">
+  No organization exists yet. Run the bootstrap command:
+  <code>docker compose exec app python manage.py bootstrap</code>
+</p>
+{% endblock %}

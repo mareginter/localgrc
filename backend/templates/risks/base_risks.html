@@ -1,21 +1,32 @@
 {% extends "base.html" %}
 {% block content %}
-<div style="max-width:900px;margin:2rem auto;">
-  <nav style="margin-bottom:1.5rem;display:flex;gap:1rem;border-bottom:1px solid #ddd;padding-bottom:0.5rem;">
-    <a href="{% url 'home' %}">Home</a>
+<header style="background:#fff;border-bottom:1px solid #e5e7eb;padding:0.75rem 0;position:sticky;top:0;z-index:10;">
+  <div style="max-width:1800px;margin:0 auto;padding:0 2rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;font-size:0.92rem;">
+    <a href="{% url 'home' %}" style="font-weight:700;font-size:1.05rem;text-decoration:none;color:#111827;margin-right:0.5rem;">LocalGRC</a>
     <a href="{% url 'risk_list' %}">Risks</a>
     <a href="{% url 'risk_matrix' %}">Matrix</a>
     <a href="{% url 'asset_list' %}">Assets</a>
-    <a href="/admin/" style="margin-left:auto;">Admin</a>
-  </nav>
+    <a href="{% url 'framework_list' %}">Frameworks</a>
+    <a href="{% url 'control_list' %}">Controls</a>
+    <a href="{% url 'framework_coverage' %}">Coverage</a>
+    <a href="{% url 'policy_list' %}">Policies</a>
+    <a href="{% url 'audit_list' %}">Audits</a>
+    <a href="{% url 'vendor_list' %}">Vendors</a>
+    <a href="{% url 'incident_list' %}">Incidents</a>
+    <a href="{% url 'deadline_dashboard' %}">Deadlines</a>
+    <a href="{% url 'evidence_list' %}">Evidence</a>
+    <a href="/admin/" style="margin-left:auto;color:#666;">Admin</a>
+  </div>
+</header>
+<main style="max-width:1800px;margin:0 auto;padding:2rem;">
   {% if messages %}
     {% for m in messages %}
-      <div style="padding:0.5rem 1rem;margin:0.5rem 0;border-radius:4px;
+      <div style="padding:0.6rem 1rem;margin:0 0 1rem 0;border-radius:4px;
         background:{% if m.tags == 'error' %}#fee{% else %}#e7f7e7{% endif %};">
         {{ m }}
       </div>
     {% endfor %}
   {% endif %}
   {% block risks_content %}{% endblock %}
-</div>
+</main>
 {% endblock %}

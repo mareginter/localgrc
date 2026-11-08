@@ -1,0 +1,203 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;">
+  <div>
+    <h1 style="margin:0 0 0.25rem 0;">{{ org.name }}</h1>
+    <p style="color:#666;margin:0;font-size:0.9rem;">{{ now|date:"l, j F Y - H:i" }}</p>
+  </div>
+</div>
+
+{% if alerts %}
+  <div style="margin-bottom:1.5rem;">
+    {% for alert in alerts %}
+      <div style="padding:0.6rem 1rem;margin:0.4rem 0;border-radius:4px;
+        {% if alert.severity == 'critical' %}background:#fee;border-left:4px solid #dc2626;
+        {% elif alert.severity == 'high' %}background:#fef3c7;border-left:4px solid #f59e0b;
+        {% else %}background:#eff6ff;border-left:4px solid #2563eb;{% endif %}">
+        <a href="{{ alert.link }}" style="text-decoration:none;color:#111;">{{ alert.text }}</a>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<!-- Quick actions -->
+<div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+  <a href="{% url 'risk_create' %}" style="padding:0.4rem 0.9rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Risk</a>
+  <a href="{% url 'control_create' %}" style="padding:0.4rem 0.9rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Control</a>
+  <a href="{% url 'policy_create' %}" style="padding:0.4rem 0.9rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Policy</a>
+  <a href="{% url 'audit_create' %}" style="padding:0.4rem 0.9rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Audit</a>
+  <a href="{% url 'vendor_create' %}" style="padding:0.4rem 0.9rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Vendor</a>
+  <a href="{% url 'incident_create' %}" style="padding:0.4rem 0.9rem;background:#dc2626;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Incident</a>
+  <a href="{% url 'evidence_create' %}" style="padding:0.4rem 0.9rem;background:#16a34a;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Evidence</a>
+</div>
+
+<!-- KPI cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-bottom:1.5rem;">
+  <a href="{% url 'risk_list' %}" style="text-decoration:none;color:inherit;">
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
+      <div style="color:#666;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;">Risks</div>
+      <div style="font-size:2rem;font-weight:bold;line-height:1.1;">{{ risk_total }}</div>
+      <div style="font-size:0.8rem;margin-top:0.4rem;">
+        {% if risk_by_level.critical %}<span style="color:#dc2626;">{{ risk_by_level.critical }} critical</span>{% endif %}
+        {% if risk_by_level.high %}<span style="color:#f59e0b;margin-left:0.5rem;">{{ risk_by_level.high }} high</span>{% endif %}
+      </div>
+    </div>
+  </a>
+  <a href="{% url 'framework_coverage' %}" style="text-decoration:none;color:inherit;">
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
+      <div style="color:#666;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;">Coverage</div>
+      <div style="font-size:2rem;font-weight:bold;line-height:1.1;">
+        {% if coverage_rows %}{{ coverage_rows.0.pct }}%{% else %}-{% endif %}
+      </div>
+      <div style="font-size:0.8rem;color:#666;margin-top:0.4rem;">{{ coverage_rows|length }} framework(s)</div>
+    </div>
+  </a>
+  <a href="{% url 'audit_list' %}" style="text-decoration:none;color:inherit;">
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
+      <div style="color:#666;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;">Open findings</div>
+      <div style="font-size:2rem;font-weight:bold;line-height:1.1;">{{ findings_summary.total }}</div>
+      <div style="font-size:0.8rem;margin-top:0.4rem;">
+        {% if findings_summary.major_nc %}<span style="color:#dc2626;">{{ findings_summary.major_nc }} major NC</span>{% endif %}
+        {% if findings_summary.minor_nc %}<span style="color:#f59e0b;margin-left:0.5rem;">{{ findings_summary.minor_nc }} minor</span>{% endif %}
+      </div>
+    </div>
+  </a>
+  <a href="{% url 'incident_list' %}" style="text-decoration:none;color:inherit;">
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
+      <div style="color:#666;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;">Open incidents</div>
+      <div style="font-size:2rem;font-weight:bold;line-height:1.1;">{{ open_incidents }}</div>
+      <div style="font-size:0.8rem;margin-top:0.4rem;">
+        {% if overdue_deadlines %}<span style="color:#dc2626;">{{ overdue_deadlines|length }} deadlines overdue</span>
+        {% elif pending_deadlines %}<span style="color:#f59e0b;">{{ pending_deadlines|length }} pending deadlines</span>
+        {% else %}<span style="color:#666;">No deadlines</span>{% endif %}
+      </div>
+    </div>
+  </a>
+</div>
+
+<!-- Row 2: Top risks + coverage -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:1rem;margin-bottom:1.5rem;">
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
+    <h2 style="margin:0 0 0.75rem 0;font-size:1.05rem;">Top risks by score</h2>
+    {% if top_risks %}
+      <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+        {% for r in top_risks %}
+          <tr style="border-bottom:1px solid #f3f4f6;">
+            <td style="padding:0.4rem 0;width:70px;">
+              <a href="{% url 'risk_detail' r.pk %}" style="text-decoration:none;color:#111;">{{ r.code }}</a>
+            </td>
+            <td style="padding:0.4rem 0;">{{ r.title|truncatechars:45 }}</td>
+            <td style="padding:0.4rem 0;text-align:right;font-weight:bold;
+              color:{% if r.risk_level == 'critical' %}#dc2626{% elif r.risk_level == 'high' %}#f59e0b{% elif r.risk_level == 'medium' %}#eab308{% else %}#16a34a{% endif %};">
+              {{ r.residual_score|default:r.inherent_score }}
+            </td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p style="color:#666;font-size:0.9rem;">No scored risks yet.</p>
+    {% endif %}
+  </div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
+    <h2 style="margin:0 0 0.75rem 0;font-size:1.05rem;">Compliance coverage</h2>
+    {% if coverage_rows %}
+      {% for row in coverage_rows %}
+        <div style="margin-bottom:0.9rem;">
+          <div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:0.2rem;">
+            <a href="{% url 'framework_detail' row.framework.pk %}" style="text-decoration:none;color:#111;">
+              {{ row.framework.name }} {{ row.version.version }}
+            </a>
+            <strong>{{ row.pct }}%</strong>
+          </div>
+          <div style="background:#e5e7eb;height:8px;border-radius:4px;">
+            <div style="background:#16a34a;height:8px;border-radius:4px;width:{{ row.pct }}%;"></div>
+          </div>
+          <div style="font-size:0.75rem;color:#666;margin-top:0.2rem;">
+            {{ row.covered }} / {{ row.total }} fully covered
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:#666;font-size:0.9rem;">No frameworks configured.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Row 3: 3 small cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1.5rem;">
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
+    <h2 style="margin:0 0 0.75rem 0;font-size:1rem;">Upcoming deadlines</h2>
+    {% if pending_deadlines %}
+      {% for d in pending_deadlines %}
+        <div style="font-size:0.85rem;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;">
+          <a href="{% url 'incident_detail' d.incident.pk %}" style="text-decoration:none;color:#111;">{{ d.incident.code }}</a>
+          <span style="color:#666;font-size:0.75rem;"> {{ d.get_regulation_display|truncatechars:18 }}</span>
+          <div style="font-size:0.75rem;color:{% if d.status_label == 'urgent' %}#f59e0b{% else %}#666{% endif %};">
+            {{ d.deadline_at|timeuntil:now }}
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:#666;font-size:0.85rem;">No pending deadlines.</p>
+    {% endif %}
+  </div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
+    <h2 style="margin:0 0 0.75rem 0;font-size:1rem;">Evidence</h2>
+    <div style="font-size:0.9rem;">
+      <div style="display:flex;justify-content:space-between;padding:0.35rem 0;">
+        <a href="{% url 'evidence_list' %}?status=expired" style="text-decoration:none;color:{% if expired_evidence_count %}#dc2626{% else %}#666{% endif %};">Expired</a>
+        <strong>{{ expired_evidence_count }}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:0.35rem 0;">
+        <a href="{% url 'evidence_list' %}?status=expiring" style="text-decoration:none;color:{% if expiring_evidence_count %}#f59e0b{% else %}#666{% endif %};">Expiring (30d)</a>
+        <strong>{{ expiring_evidence_count }}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:0.35rem 0;">
+        <a href="{% url 'evidence_list' %}?status=unverified" style="text-decoration:none;color:#666;">Unverified</a>
+        <strong>{{ unverified_evidence_count }}</strong>
+      </div>
+    </div>
+  </div>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
+    <h2 style="margin:0 0 0.75rem 0;font-size:1rem;">Vendors & policies</h2>
+    <div style="font-size:0.9rem;">
+      <div style="display:flex;justify-content:space-between;padding:0.35rem 0;">
+        <a href="{% url 'vendor_list' %}" style="text-decoration:none;color:{% if critical_vendors_no_dpa_count %}#dc2626{% else %}#666{% endif %};">Critical w/o DPA</a>
+        <strong>{{ critical_vendors_no_dpa_count }}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:0.35rem 0;">
+        <a href="{% url 'policy_list' %}?status=in_review" style="text-decoration:none;color:#666;">Policies pending</a>
+        <strong>{{ policies_pending }}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:0.35rem 0;">
+        <a href="{% url 'control_list' %}" style="text-decoration:none;color:#666;">Total controls</a>
+        <strong>{{ control_total }}</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 4: recent activity -->
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
+  <h2 style="margin:0 0 0.75rem 0;font-size:1.05rem;">Recent activity</h2>
+  {% if recent_activity %}
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+      {% for log in recent_activity %}
+        <tr style="border-bottom:1px solid #f3f4f6;">
+          <td style="padding:0.35rem 0;width:150px;color:#666;">{{ log.created_at|date:"Y-m-d H:i" }}</td>
+          <td style="padding:0.35rem 0;width:100px;">
+            {% if log.action == 'create' %}<span style="color:#16a34a;font-weight:bold;">create</span>
+            {% elif log.action == 'update' %}<span style="color:#2563eb;font-weight:bold;">update</span>
+            {% elif log.action == 'delete' %}<span style="color:#dc2626;font-weight:bold;">delete</span>
+            {% else %}<span style="color:#666;">{{ log.action }}</span>{% endif %}
+          </td>
+          <td style="padding:0.35rem 0;">{{ log.entity_short }}</td>
+          <td style="padding:0.35rem 0;color:#666;">{{ log.actor_name }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p style="color:#666;font-size:0.9rem;">No activity yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
