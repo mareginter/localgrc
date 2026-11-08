@@ -1,47 +1,57 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<h1>Policies</h1>
-<p>
-  <a href="{% url 'policy_create' %}" class="btn btn-primary">+ New policy</a>
-</p>
-<form method="get" style="margin:1rem 0;display:flex;gap:0.5rem;flex-wrap:wrap;">
-  <input type="text" name="q" value="{{ q }}" placeholder="Search code or title" style="padding:0.4rem;flex:1;min-width:200px;">
-  <select name="status">
+<div class="page-header">
+  <div>
+    <h1>Policies</h1>
+    <p class="page-subtitle">Governance documents and their approval workflows.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'policy_create' %}" class="btn btn-primary">+ New policy</a>
+  </div>
+</div>
+
+<form method="get" class="card" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;padding:0.75rem 1rem;margin-bottom:1rem;">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search code or title" style="flex:1;min-width:200px;">
+  <select name="status" style="width:auto;min-width:140px;">
     <option value="">All statuses</option>
     {% for v,l in status_choices %}<option value="{{ v }}" {% if v == status %}selected{% endif %}>{{ l }}</option>{% endfor %}
   </select>
-  <select name="category">
+  <select name="category" style="width:auto;min-width:140px;">
     <option value="">All categories</option>
     {% for v,l in category_choices %}<option value="{{ v }}" {% if v == category %}selected{% endif %}>{{ l }}</option>{% endfor %}
   </select>
-  <button type="submit" style="padding:0.4rem 0.8rem;">Filter</button>
-  <a href="{% url 'policy_list' %}" style="padding:0.4rem 0.8rem;">Reset</a>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  <a href="{% url 'policy_list' %}" class="btn btn-neutral">Reset</a>
 </form>
-<table>
-  <thead><tr>
-    <th>Code</th><th>Title</th><th>Category</th>
-    <th>Status</th><th>Version</th><th>Owner</th>
-  </tr></thead>
-  <tbody>
-    {% for p in page %}
-      <tr>
-        <td><a href="{% url 'policy_detail' p.pk %}">{{ p.code }}</a></td>
-        <td>{{ p.title }}</td>
-        <td>{{ p.get_category_display }}</td>
-        <td>{{ p.get_status_display }}</td>
-        <td>{% if p.current_version %}v{{ p.current_version.version_number }}{% else %}-{% endif %}</td>
-        <td>{{ p.owner.full_name|default:"-" }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="6" style="padding:1rem;text-align:center;color:#666;">No policies yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <table>
+    <thead><tr>
+      <th>Code</th><th>Title</th><th>Category</th>
+      <th>Status</th><th>Version</th><th>Owner</th>
+    </tr></thead>
+    <tbody>
+      {% for p in page %}
+        <tr>
+          <td><a href="{% url 'policy_detail' p.pk %}" style="font-weight:600;">{{ p.code }}</a></td>
+          <td>{{ p.title }}</td>
+          <td>{{ p.get_category_display }}</td>
+          <td>{{ p.get_status_display }}</td>
+          <td>{% if p.current_version %}<span class="badge badge-info">v{{ p.current_version.version_number }}</span>{% else %}<span class="muted">-</span>{% endif %}</td>
+          <td>{{ p.owner.full_name|default:"-" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6"><div class="empty">No policies yet.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
 {% if page.has_other_pages %}
-  <p style="margin-top:1rem;">
-    {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">prev</a>{% endif %}
-    Page {{ page.number }} of {{ page.paginator.num_pages }}
-    {% if page.has_next %}<a href="?page={{ page.next_page_number }}">next</a>{% endif %}
-  </p>
+  <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center;">
+    {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}" class="btn btn-neutral btn-sm">← Previous</a>{% else %}<span></span>{% endif %}
+    <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?page={{ page.next_page_number }}" class="btn btn-neutral btn-sm">Next →</a>{% else %}<span></span>{% endif %}
+  </div>
 {% endif %}
 {% endblock %}

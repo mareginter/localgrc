@@ -1,73 +1,86 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<p><a href="{% url 'audit_detail' finding.audit.pk %}">&lt;- Back to {{ finding.audit.code }}</a></p>
-<h1>{{ finding.code }} - {{ finding.title }}</h1>
-<p>
-  <strong>Severity:</strong>
-  {% if finding.severity == 'major_nc' %}<span class="badge badge-danger">Major NC</span>
-  {% elif finding.severity == 'minor_nc' %}<span class="badge badge-warning">Minor NC</span>
-  {% elif finding.severity == 'observation' %}<span class="badge badge-info">Observation</span>
-  {% else %}<span class="badge badge-neutral">Opportunity</span>{% endif %}
-  | <strong>Status:</strong> {{ finding.get_status_display }} |
-  <a href="{% url 'finding_update' finding.pk %}">Edit</a>
-</p>
-{% if finding.description %}<p>{{ finding.description|linebreaks }}</p>{% endif %}
-<p>
-  {% if finding.requirement %}<strong>Requirement:</strong> <a href="{% url 'requirement_detail' finding.requirement.pk %}">{{ finding.requirement.code }}</a> | {% endif %}
-  {% if finding.control %}<strong>Control:</strong> <a href="{% url 'control_detail' finding.control.pk %}">{{ finding.control.code }}</a>{% endif %}
-</p>
+<div class="page-header">
+  <div>
+    <h1 style="display:flex;align-items:center;gap:0.75rem;">
+      {{ finding.code }} - {{ finding.title }}
+      {% if finding.severity == 'major_nc' %}<span class="badge badge-danger" style="font-size:0.9rem;">Major NC</span>
+      {% elif finding.severity == 'minor_nc' %}<span class="badge badge-warning" style="font-size:0.9rem;">Minor NC</span>
+      {% endif %}
+    </h1>
+    <p class="page-subtitle"><strong>Status:</strong> {{ finding.get_status_display }}</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'audit_detail' finding.audit.pk %}" class="btn btn-neutral">← Back to {{ finding.audit.code }}</a>
+    <a href="{% url 'finding_update' finding.pk %}" class="btn btn-primary">Edit finding</a>
+  </div>
+</div>
+
+<div class="card mb-3">
+  {% if finding.description %}
+    <div style="margin-bottom:1rem;"><strong>Description:</strong><br>{{ finding.description|linebreaks }}</div>
+  {% endif %}
+  <div style="display:flex;gap:1.5rem;">
+    {% if finding.requirement %}<div><strong>Requirement:</strong> <a href="{% url 'requirement_detail' finding.requirement.pk %}">{{ finding.requirement.code }}</a></div>{% endif %}
+    {% if finding.control %}<div><strong>Control:</strong> <a href="{% url 'control_detail' finding.control.pk %}">{{ finding.control.code }}</a></div>{% endif %}
+  </div>
+</div>
 
 {% if transitions %}
-  <div style="margin:1rem 0;padding:0.75rem;background:#eff6ff;border-radius:4px;">
-    <strong>Workflow:</strong>
-    {% for t in transitions %}
-      <form method="post" action="{% url 'finding_transition' finding.pk %}" style="display:inline-block;margin:0 0.5rem 0 0;">
-        {% csrf_token %}
-        <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
-        <input type="text" name="comment" placeholder="comment" style="width:160px;">
-        <button type="submit" class="btn btn-primary btn-sm">
-          Move to {{ t.to_state.label }}
-        </button>
-      </form>
-    {% endfor %}
+  <div class="card mb-3" style="background:#f8fafc;border-color:#cbd5e1;">
+    <h3 style="margin-top:0;">Workflow Actions</h3>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+      {% for t in transitions %}
+        <form method="post" action="{% url 'finding_transition' finding.pk %}" style="margin:0;display:flex;gap:0.5rem;">
+          {% csrf_token %}
+          <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
+          <input type="text" name="comment" placeholder="Comment" style="width:150px;padding:0.35rem 0.5rem;font-size:0.85rem;">
+          <button type="submit" class="btn btn-primary btn-sm">Move to {{ t.to_state.label }}</button>
+        </form>
+      {% endfor %}
+    </div>
   </div>
 {% endif %}
 
-<h2 style="margin-top:2rem;">Corrective actions ({{ actions|length }})</h2>
-<table>
-  <thead><tr>
-    <th>Description</th><th>Status</th><th>Responsible</th><th>Due</th><th>Verified by</th><th></th>
-  </tr></thead>
-  <tbody>
-    {% for ca in actions %}
-      <tr>
-        <td>{{ ca.description|truncatechars:80 }}</td>
-        <td>{{ ca.get_status_display }}</td>
-        <td>{{ ca.responsible.full_name|default:"-" }}</td>
-        <td>{{ ca.due_date|default:"-" }}</td>
-        <td>{{ ca.verified_by.full_name|default:"-" }}{% if ca.verified_at %} <small>({{ ca.verified_at|date:"Y-m-d" }})</small>{% endif %}</td>
-        <td>
-          {% if ca.status == 'completed' %}
-            <form method="post" action="{% url 'action_verify' ca.pk %}" style="display:inline;">
-              {% csrf_token %}
-              <input type="text" name="notes" placeholder="verification notes" style="padding:0.2rem;font-size:0.8rem;width:140px;">
-              <button type="submit" class="btn btn-success btn-sm">Verify</button>
-            </form>
-          {% endif %}
-        </td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="6" style="padding:0.6rem;color:#666;">No corrective actions yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<details style="margin:1rem 0;">
-  <summary style="cursor:pointer;">+ Add corrective action</summary>
-  <form method="post" action="{% url 'action_create' finding.pk %}" style="margin-top:0.5rem;">
-    {% csrf_token %}
-    {{ action_form.as_p }}
-    <button type="submit" class="btn btn-primary">Save</button>
-  </form>
-</details>
+<div class="card" style="padding:0;overflow:hidden;">
+  <div style="padding:1.15rem 1.25rem;">
+    <h2 style="margin:0;">Corrective actions ({{ actions|length }})</h2>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Description</th><th>Status</th><th>Responsible</th><th>Due</th><th>Verified by</th><th class="text-right">Action</th>
+    </tr></thead>
+    <tbody>
+      {% for ca in actions %}
+        <tr>
+          <td>{{ ca.description|truncatechars:60 }}</td>
+          <td>{{ ca.get_status_display }}</td>
+          <td>{{ ca.responsible.full_name|default:"-" }}</td>
+          <td>{{ ca.due_date|default:"-" }}</td>
+          <td>{{ ca.verified_by.full_name|default:"-" }}{% if ca.verified_at %} <small class="muted">({{ ca.verified_at|date:"Y-m-d" }})</small>{% endif %}</td>
+          <td class="text-right">
+            {% if ca.status == 'completed' %}
+              <form method="post" action="{% url 'action_verify' ca.pk %}" style="display:inline-flex;gap:0.25rem;">
+                {% csrf_token %}
+                <input type="text" name="notes" placeholder="notes" style="padding:0.2rem 0.4rem;font-size:0.8rem;width:120px;">
+                <button type="submit" class="btn btn-success btn-sm">Verify</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6"><div class="empty">No corrective actions yet.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div style="padding:1rem 1.25rem;border-top:1px solid var(--c-border);background:#f9fafb;">
+    <details>
+      <summary style="cursor:pointer;color:var(--c-primary);font-weight:500;font-size:0.9rem;">+ Add corrective action</summary>
+      <form method="post" action="{% url 'action_create' finding.pk %}" style="margin-top:0.75rem;">
+        {% csrf_token %}{{ action_form.as_p }}
+        <button type="submit" class="btn btn-primary btn-sm">Save action</button>
+      </form>
+    </details>
+  </div>
+</div>
 {% endblock %}

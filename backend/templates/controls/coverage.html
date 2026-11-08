@@ -1,41 +1,57 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<h1>Coverage by framework</h1>
-<p><a href="{% url 'control_list' %}">&lt;- Back to controls</a></p>
-<p style="color:#555;">Percentage of requirements fully covered by at least one control.</p>
+<div class="page-header">
+  <div>
+    <h1>Coverage by framework</h1>
+    <p class="page-subtitle">Percentage of requirements fully covered by at least one control.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'control_list' %}" class="btn btn-neutral">← Back to controls</a>
+  </div>
+</div>
 
-{% if coverage_data %}
-  <table style="width:100%;border-collapse:collapse;margin-top:1rem;">
-    <thead><tr>
-      <th>Framework</th>
-      <th>Total</th><th>Full</th><th>Partial</th><th>N/A</th><th>Uncovered</th><th>Coverage %</th>
-    </tr></thead>
-    <tbody>
-      {% for row in coverage_data %}
-        <tr>
-          <td>
-            <a href="{% url 'framework_detail' row.framework.pk %}">{{ row.framework.name }} {{ row.version.version }}</a> <a href="{% url 'soa_export' row.framework.pk %}" style="margin-left:0.5rem;font-size:0.85rem;">Export SoA CSV</a>
-          </td>
-          <td>{{ row.total }}</td>
-          <td>{{ row.full }}</td>
-          <td>{{ row.partial }}</td>
-          <td>{{ row.na }}</td>
-          <td>{{ row.uncovered }}</td>
-          <td>
-            <div style="display:flex;align-items:center;gap:0.5rem;">
-              <div style="flex:1;background:#e5e7eb;height:8px;border-radius:4px;min-width:80px;">
-                <div style="background:#16a34a;height:8px;border-radius:4px;width:{{ row.pct }}%;"></div>
+<div class="card" style="padding:0;overflow:hidden;">
+  {% if coverage_data %}
+    <table>
+      <thead><tr>
+        <th>Framework</th>
+        <th class="text-right">Total</th>
+        <th class="text-right">Full</th>
+        <th class="text-right">Partial</th>
+        <th class="text-right">N/A</th>
+        <th class="text-right">Uncovered</th>
+        <th style="width:200px;">Coverage %</th>
+      </tr></thead>
+      <tbody>
+        {% for row in coverage_data %}
+          <tr>
+            <td>
+              <a href="{% url 'framework_detail' row.framework.pk %}" style="font-weight:600;">{{ row.framework.name }} {{ row.version.version }}</a>
+              <div style="margin-top:0.2rem;">
+                <a href="{% url 'soa_export' row.framework.pk %}" class="btn btn-neutral btn-sm" style="padding:0.1rem 0.4rem;font-size:0.7rem;">Export SoA CSV</a>
               </div>
-              <span>{{ row.pct }}%</span>
-            </div>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <p style="padding:1rem;background:#fef3c7;border-radius:4px;">
-    No frameworks found. Run <code>python manage.py seed_frameworks</code> first.
-  </p>
-{% endif %}
+            </td>
+            <td class="text-right"><strong>{{ row.total }}</strong></td>
+            <td class="text-right" style="color:var(--c-success);">{{ row.full }}</td>
+            <td class="text-right" style="color:var(--c-warning);">{{ row.partial }}</td>
+            <td class="text-right muted">{{ row.na }}</td>
+            <td class="text-right" style="color:var(--c-danger);">{{ row.uncovered }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:0.5rem;">
+                <div class="progress-bar" style="flex:1;">
+                  <div style="width:{{ row.pct }}%;"></div>
+                </div>
+                <span style="font-weight:600;font-size:0.85rem;min-width:35px;">{{ row.pct }}%</span>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty" style="margin:1rem;">
+      No frameworks found. Run <code>python manage.py seed_frameworks</code> first.
+    </div>
+  {% endif %}
+</div>
 {% endblock %}

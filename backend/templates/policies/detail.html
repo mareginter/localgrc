@@ -1,103 +1,123 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<p><a href="{% url 'policy_list' %}">&lt;- Back to policies</a></p>
-<h1>{{ policy.code }} - {{ policy.title }}</h1>
-<p>
-  <strong>Category:</strong> {{ policy.get_category_display }} |
-  <strong>Status:</strong> {{ policy.get_status_display }} |
-  <strong>Owner:</strong> {{ policy.owner.full_name|default:"-" }} |
-  <a href="{% url 'policy_update' policy.pk %}">Edit</a>
-</p>
-{% if policy.summary %}<p>{{ policy.summary|linebreaks }}</p>{% endif %}
+<div class="page-header">
+  <div>
+    <h1>{{ policy.code }} - {{ policy.title }}</h1>
+    <p class="page-subtitle">
+      <strong>Category:</strong> {{ policy.get_category_display }} | 
+      <strong>Status:</strong> {{ policy.get_status_display }} | 
+      <strong>Owner:</strong> {{ policy.owner.full_name|default:"-" }}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'policy_list' %}" class="btn btn-neutral">← Back to list</a>
+    <a href="{% url 'policy_update' policy.pk %}" class="btn btn-primary">Edit policy</a>
+  </div>
+</div>
 
 {% if transitions %}
-  <div style="margin:1rem 0;padding:0.75rem;background:#eff6ff;border-radius:4px;">
-    <strong>Workflow:</strong>
-    {% for t in transitions %}
-      <form method="post" action="{% url 'policy_transition' policy.pk %}" style="display:inline-block;margin:0 0.5rem 0 0;">
-        {% csrf_token %}
-        <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
-        <input type="text" name="comment" placeholder="comment (optional)" style="width:180px;">
-        <button type="submit" class="btn btn-primary btn-sm">
-          Move to {{ t.to_state.label }}
-        </button>
-      </form>
-    {% endfor %}
-  </div>
-{% endif %}
-
-{% if current_version %}
-  <h2 style="margin-top:2rem;">Current version v{{ current_version.version_number }}</h2>
-  <p style="font-size:0.9rem;color:#555;">
-    {% if current_version.effective_date %}Effective: {{ current_version.effective_date }} | {% endif %}
-    {% if current_version.next_review_date %}Next review: {{ current_version.next_review_date }} | {% endif %}
-    {% if current_version.file_attachment %}<a href="{{ current_version.file_attachment.url }}">Download file</a>{% endif %}
-  </p>
-  <div style="background:#f9fafb;padding:1rem;border:1px solid #e5e7eb;border-radius:4px;margin:1rem 0;">
-    {% if current_version.content %}{{ current_version.content|linebreaks }}{% else %}<em>No text content.</em>{% endif %}
-  </div>
-
-  <details style="margin:1rem 0;">
-    <summary style="cursor:pointer;">+ Record approval decision</summary>
-    <form method="post" action="{% url 'policy_approve' policy.pk %}" style="margin-top:0.5rem;">
-      {% csrf_token %}
-      {{ approval_form.as_p }}
-      <button type="submit" class="btn btn-primary">Save</button>
-    </form>
-  </details>
-{% else %}
-  <p style="padding:1rem;background:#fef3c7;border-radius:4px;">
-    No current version set. Add a version below and transition to Published to auto-select it.
-  </p>
-{% endif %}
-
-<h2 style="margin-top:2rem;">Version history ({{ versions|length }})</h2>
-<table>
-  <thead><tr>
-    <th>Version</th><th>Effective</th><th>Next review</th>
-    <th>Approved by</th><th>Approved at</th><th>Change</th>
-  </tr></thead>
-  <tbody>
-    {% for v in versions %}
-      <tr>
-        <td>v{{ v.version_number }}</td>
-        <td>{{ v.effective_date|default:"-" }}</td>
-        <td>{{ v.next_review_date|default:"-" }}</td>
-        <td>{{ v.approved_by.full_name|default:"-" }}</td>
-        <td>{{ v.approved_at|date:"Y-m-d"|default:"-" }}</td>
-        <td>{{ v.change_summary|truncatechars:60|default:"-" }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="6" style="padding:0.6rem;color:#666;">No versions yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<details style="margin:1rem 0;">
-  <summary style="cursor:pointer;">+ Add new version</summary>
-  <form method="post" action="{% url 'version_create' policy.pk %}" enctype="multipart/form-data" style="margin-top:0.5rem;">
-    {% csrf_token %}
-    {{ version_form.as_p }}
-    <button type="submit" class="btn btn-primary">Save</button>
-  </form>
-</details>
-
-{% if current_version and current_version.approvals.all %}
-  <h2 style="margin-top:2rem;">Approval trail</h2>
-  <table>
-    <thead><tr>
-      <th>Approver</th><th>Decision</th><th>Comment</th><th>When</th>
-    </tr></thead>
-    <tbody>
-      {% for a in current_version.approvals.all %}
-        <tr>
-          <td>{{ a.approver.full_name|default:a.approver.email }}</td>
-          <td>{{ a.get_decision_display }}</td>
-          <td>{{ a.comment|default:"-"|truncatechars:80 }}</td>
-          <td>{{ a.decided_at|date:"Y-m-d H:i" }}</td>
-        </tr>
+  <div class="card mb-3" style="background:#f8fafc;border-color:#cbd5e1;">
+    <h3 style="margin-top:0;">Workflow Actions</h3>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+      {% for t in transitions %}
+        <form method="post" action="{% url 'policy_transition' policy.pk %}" style="margin:0;display:flex;gap:0.5rem;">
+          {% csrf_token %}
+          <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
+          <input type="text" name="comment" placeholder="Comment" style="width:150px;padding:0.35rem 0.5rem;font-size:0.85rem;">
+          <button type="submit" class="btn btn-primary btn-sm">Move to {{ t.to_state.label }}</button>
+        </form>
       {% endfor %}
-    </tbody>
-  </table>
+    </div>
+  </div>
 {% endif %}
+
+<div class="grid-2" style="display:grid;grid-template-columns:1fr;gap:1.25rem;">
+  
+  <div class="card">
+    {% if current_version %}
+      <h2 style="display:flex;justify-content:space-between;align-items:center;">
+        Current version v{{ current_version.version_number }}
+        <span class="badge badge-success">Active</span>
+      </h2>
+      <p class="muted" style="font-size:0.9rem;margin-top:-0.5rem;">
+        {% if current_version.effective_date %}Effective: {{ current_version.effective_date }} | {% endif %}
+        {% if current_version.next_review_date %}Next review: {{ current_version.next_review_date }} | {% endif %}
+        {% if current_version.file_attachment %}<a href="{{ current_version.file_attachment.url }}" class="btn btn-neutral btn-sm">Download file</a>{% endif %}
+      </p>
+      
+      <div style="background:#f9fafb;padding:1.5rem;border:1px solid var(--c-border);border-radius:var(--radius);margin:1rem 0;font-family:monospace;white-space:pre-wrap;font-size:0.9rem;">
+        {% if current_version.content %}{{ current_version.content }}{% else %}<em class="muted">No text content.</em>{% endif %}
+      </div>
+
+      <details style="margin-top:1rem;border-top:1px solid var(--c-border);padding-top:1rem;">
+        <summary style="cursor:pointer;color:var(--c-primary);font-weight:500;font-size:0.9rem;">+ Record approval decision</summary>
+        <form method="post" action="{% url 'policy_approve' policy.pk %}" style="margin-top:0.75rem;">
+          {% csrf_token %}
+          {{ approval_form.as_p }}
+          <button type="submit" class="btn btn-primary btn-sm">Save decision</button>
+        </form>
+      </details>
+    {% else %}
+      <div class="empty">
+        No current version set. Add a version below and transition to Published to auto-select it.
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:1.15rem 1.25rem;">
+      <h2 style="margin:0;">Version history</h2>
+    </div>
+    <table>
+      <thead><tr><th>Version</th><th>Effective</th><th>Next review</th><th>Approved by</th><th>Change</th></tr></thead>
+      <tbody>
+        {% for v in versions %}
+          <tr>
+            <td><strong>v{{ v.version_number }}</strong></td>
+            <td>{{ v.effective_date|default:"-" }}</td>
+            <td>{{ v.next_review_date|default:"-" }}</td>
+            <td>{{ v.approved_by.full_name|default:"-" }}</td>
+            <td>{{ v.change_summary|truncatechars:40|default:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5"><div class="empty">No versions yet.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--c-border);background:#f9fafb;">
+      <details>
+        <summary style="cursor:pointer;color:var(--c-primary);font-weight:500;font-size:0.9rem;">+ Add new version</summary>
+        <form method="post" action="{% url 'version_create' policy.pk %}" enctype="multipart/form-data" style="margin-top:0.75rem;">
+          {% csrf_token %}{{ version_form.as_p }}
+          <button type="submit" class="btn btn-primary btn-sm">Save version</button>
+        </form>
+      </details>
+    </div>
+  </div>
+
+  {% if current_version and current_version.approvals.all %}
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:1.15rem 1.25rem;">
+        <h2 style="margin:0;">Approval trail</h2>
+      </div>
+      <table>
+        <thead><tr><th>Approver</th><th>Decision</th><th>Comment</th><th>When</th></tr></thead>
+        <tbody>
+          {% for a in current_version.approvals.all %}
+            <tr>
+              <td style="font-weight:500;">{{ a.approver.full_name|default:a.approver.email }}</td>
+              <td>
+                {% if a.decision == 'approved' %}<span class="badge badge-success">Approved</span>
+                {% elif a.decision == 'rejected' %}<span class="badge badge-danger">Rejected</span>
+                {% else %}<span class="badge badge-neutral">{{ a.get_decision_display }}</span>{% endif %}
+              </td>
+              <td>{{ a.comment|default:"-"|truncatechars:50 }}</td>
+              <td class="muted">{{ a.decided_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
 {% endblock %}

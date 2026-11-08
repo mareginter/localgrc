@@ -1,92 +1,120 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<p><a href="{% url 'control_list' %}">&lt;- Back to controls</a></p>
-<h1>{{ control.code }} - {{ control.name }}</h1>
-<p>
-  <strong>Type:</strong> {{ control.get_control_type_display }} |
-  <strong>Status:</strong> {{ control.get_status_display }} |
-  <strong>Category:</strong> {{ control.category|default:"-" }} |
-  <a href="{% url 'control_update' control.pk %}">Edit</a>
-</p>
-<p><strong>Owner:</strong> {{ control.owner.full_name|default:"-" }}</p>
-{% if control.description %}<p>{{ control.description|linebreaks }}</p>{% endif %}
+<div class="page-header">
+  <div>
+    <h1>{{ control.code }} - {{ control.name }}</h1>
+    <p class="page-subtitle">
+      <strong>Type:</strong> {{ control.get_control_type_display }} | 
+      <strong>Status:</strong> {{ control.get_status_display }} | 
+      <strong>Category:</strong> {{ control.category|default:"-" }}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'control_list' %}" class="btn btn-neutral">← Back to list</a>
+    <a href="{% url 'control_update' control.pk %}" class="btn btn-primary">Edit control</a>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">Owner</div>
+  <div style="font-weight:500;margin-bottom:1rem;">{{ control.owner.full_name|default:"-" }}</div>
+  
+  {% if control.description %}
+    <div style="padding-top:1rem;border-top:1px solid var(--c-border);">
+      <strong>Description:</strong><br>
+      {{ control.description|linebreaks }}
+    </div>
+  {% endif %}
+</div>
 
 {% if transitions %}
-  <div style="margin:1rem 0;padding:0.75rem;background:#eff6ff;border-radius:4px;">
-    <strong>Workflow transitions:</strong>
-    {% for t in transitions %}
-      <form method="post" action="{% url 'control_transition' control.pk %}" style="display:inline-block;margin:0 0.5rem 0 0;">
-        {% csrf_token %}
-        <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
-        <button type="submit" class="btn btn-primary btn-sm">
-          Move to {{ t.to_state.label }}
-        </button>
-      </form>
-    {% endfor %}
+  <div class="card mb-3" style="background:#f8fafc;border-color:#cbd5e1;">
+    <h3 style="margin-top:0;">Workflow Actions</h3>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+      {% for t in transitions %}
+        <form method="post" action="{% url 'control_transition' control.pk %}" style="margin:0;">
+          {% csrf_token %}
+          <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
+          <button type="submit" class="btn btn-primary btn-sm">Move to {{ t.to_state.label }}</button>
+        </form>
+      {% endfor %}
+    </div>
   </div>
 {% endif %}
 
-<h2 style="margin-top:2rem;">Requirements covered ({{ requirements|length }})</h2>
-{% regroup requirements by requirement.framework_version as fw_groups %}
-{% for group in fw_groups %}
-  <h3 style="margin-top:1.2rem;font-size:1rem;color:#555;">
-    {{ group.grouper.framework.name }} {{ group.grouper.version }}
-  </h3>
-  <table style="width:100%;border-collapse:collapse;margin-bottom:1rem;">
-    <thead><tr>
-      <th>Code</th><th>Title</th><th>Coverage</th><th>Justification</th>
-    </tr></thead>
-    <tbody>
-      {% for link in group.list %}
-        <tr>
-          <td style="padding:0.4rem;width:80px;">
-            <a href="{% url 'requirement_detail' link.requirement.pk %}">{{ link.requirement.code }}</a>
-          </td>
-          <td>{{ link.requirement.title }}</td>
-          <td>{{ link.get_coverage_display }}</td>
-          <td>{{ link.justification|default:"-"|truncatechars:60 }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% empty %}
-  <p style="padding:0.6rem;color:#666;">No requirements linked yet.</p>
-{% endfor %}
-
-<details style="margin:1rem 0;">
-  <summary style="cursor:pointer;">+ Link a requirement</summary>
-  <form method="post" action="{% url 'requirement_link_create' control.pk %}" style="margin-top:0.5rem;">
-    {% csrf_token %}
-    {{ requirement_form.as_p }}
-    <button type="submit" class="btn btn-primary">Save</button>
-  </form>
-</details>
-
-<h2 style="margin-top:2rem;">Implementations ({{ implementations|length }})</h2>
-<table>
-  <thead><tr>
-    <th>Department</th><th>Status</th><th>Last tested</th><th>Next test</th>
-  </tr></thead>
-  <tbody>
-    {% for impl in implementations %}
-      <tr>
-        <td>{{ impl.department|default:"Org-wide" }}</td>
-        <td>{{ impl.get_status_display }}</td>
-        <td>{{ impl.last_tested_at|default:"-" }}</td>
-        <td>{{ impl.next_test_at|default:"-" }}</td>
-      </tr>
+<div class="grid-2" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(450px, 1fr));gap:1.25rem;">
+  
+  <!-- Requirements Covered -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:1.15rem 1.25rem 0.5rem 1.25rem;">
+      <h2 style="margin:0;">Requirements covered</h2>
+    </div>
+    {% regroup requirements by requirement.framework_version as fw_groups %}
+    {% for group in fw_groups %}
+      <div style="background:#f9fafb;padding:0.5rem 1.25rem;font-size:0.85rem;font-weight:600;color:#4b5563;border-top:1px solid var(--c-border);border-bottom:1px solid var(--c-border);">
+        {{ group.grouper.framework.name }} {{ group.grouper.version }}
+      </div>
+      <table>
+        <tbody>
+          {% for link in group.list %}
+            <tr>
+              <td style="width:80px;"><a href="{% url 'requirement_detail' link.requirement.pk %}" style="font-weight:600;">{{ link.requirement.code }}</a></td>
+              <td>{{ link.requirement.title }}</td>
+              <td class="text-right">
+                {% if link.get_coverage_display == 'Full' %}<span class="badge badge-success">Full</span>
+                {% elif link.get_coverage_display == 'Partial' %}<span class="badge badge-warning">Partial</span>
+                {% else %}<span class="badge badge-neutral">{{ link.get_coverage_display }}</span>{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     {% empty %}
-      <tr><td colspan="4" style="padding:0.6rem;color:#666;">No implementations yet.</td></tr>
+      <div class="empty" style="margin:1.25rem;">No requirements linked yet.</div>
     {% endfor %}
-  </tbody>
-</table>
+    
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--c-border);background:#f9fafb;">
+      <details>
+        <summary style="cursor:pointer;color:var(--c-primary);font-weight:500;font-size:0.9rem;">+ Link a requirement</summary>
+        <form method="post" action="{% url 'requirement_link_create' control.pk %}" style="margin-top:0.75rem;">
+          {% csrf_token %}{{ requirement_form.as_p }}
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </form>
+      </details>
+    </div>
+  </div>
 
-<details style="margin:1rem 0;">
-  <summary style="cursor:pointer;">+ Add implementation</summary>
-  <form method="post" action="{% url 'implementation_create' control.pk %}" style="margin-top:0.5rem;">
-    {% csrf_token %}
-    {{ implementation_form.as_p }}
-    <button type="submit" class="btn btn-primary">Save</button>
-  </form>
-</details>
+  <!-- Implementations -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:1.15rem 1.25rem;">
+      <h2 style="margin:0;">Implementations</h2>
+    </div>
+    <table>
+      <thead><tr><th>Department</th><th>Status</th><th>Last tested</th><th>Next test</th></tr></thead>
+      <tbody>
+        {% for impl in implementations %}
+          <tr>
+            <td style="font-weight:500;">{{ impl.department|default:"Org-wide" }}</td>
+            <td>{{ impl.get_status_display }}</td>
+            <td>{{ impl.last_tested_at|default:"-" }}</td>
+            <td>{{ impl.next_test_at|default:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4"><div class="empty">No implementations yet.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--c-border);background:#f9fafb;">
+      <details>
+        <summary style="cursor:pointer;color:var(--c-primary);font-weight:500;font-size:0.9rem;">+ Add implementation</summary>
+        <form method="post" action="{% url 'implementation_create' control.pk %}" style="margin-top:0.75rem;">
+          {% csrf_token %}{{ implementation_form.as_p }}
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </form>
+      </details>
+    </div>
+  </div>
+
+</div>
 {% endblock %}
