@@ -1,4 +1,4 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
 <p><a href="{% url 'risk_list' %}"> Back to risks</a></p>
 <h1>{{ risk.code }}  {{ risk.title }}</h1>
@@ -14,14 +14,14 @@
 {% if risk.description %}<p>{{ risk.description|linebreaks }}</p>{% endif %}
 
 <h2 style="margin-top:2rem;">Assessments</h2>
-<table style="width:100%;border-collapse:collapse;">
-  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
-    <th style="padding:0.4rem;">Type</th><th>Likelihood</th><th>Impact</th><th>Score</th><th>Current</th><th>By</th><th>At</th>
+<table>
+  <thead><tr>
+    <th>Type</th><th>Likelihood</th><th>Impact</th><th>Score</th><th>Current</th><th>By</th><th>At</th>
   </tr></thead>
   <tbody>
     {% for a in risk.assessments.all %}
-      <tr style="border-bottom:1px solid #eee;">
-        <td style="padding:0.4rem;">{{ a.get_type_display }}</td>
+      <tr>
+        <td>{{ a.get_type_display }}</td>
         <td>{{ a.likelihood }}</td><td>{{ a.impact }}</td>
         <td><strong>{{ a.score }}</strong></td>
         <td>{% if a.is_current %}{% endif %}</td>
@@ -39,19 +39,19 @@
   <form method="post" action="{% url 'assessment_create' risk.pk %}" style="margin-top:0.5rem;">
     {% csrf_token %}
     {{ assessment_form.as_p }}
-    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+    <button type="submit" class="btn btn-primary">Save</button>
   </form>
 </details>
 
 <h2 style="margin-top:2rem;">Treatments</h2>
-<table style="width:100%;border-collapse:collapse;">
-  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
-    <th style="padding:0.4rem;">Strategy</th><th>Description</th><th>Responsible</th><th>Due</th><th>Status</th>
+<table>
+  <thead><tr>
+    <th>Strategy</th><th>Description</th><th>Responsible</th><th>Due</th><th>Status</th>
   </tr></thead>
   <tbody>
     {% for t in risk.treatments.all %}
-      <tr style="border-bottom:1px solid #eee;">
-        <td style="padding:0.4rem;">{{ t.get_strategy_display }}</td>
+      <tr>
+        <td>{{ t.get_strategy_display }}</td>
         <td>{{ t.description|truncatechars:80 }}</td>
         <td>{{ t.responsible.full_name|default:"" }}</td>
         <td>{{ t.due_date|default:"" }}</td>
@@ -68,7 +68,7 @@
   <form method="post" action="{% url 'treatment_create' risk.pk %}" style="margin-top:0.5rem;">
     {% csrf_token %}
     {{ treatment_form.as_p }}
-    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+    <button type="submit" class="btn btn-primary">Save</button>
   </form>
 </details>
 {% endblock %}

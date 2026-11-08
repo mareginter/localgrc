@@ -1,4 +1,4 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
 <p><a href="{% url 'evidence_list' %}">&lt;- Back to evidence</a></p>
 <h1>{{ evidence.title }}</h1>
@@ -14,10 +14,10 @@
   {% if evidence.valid_until %}{{ evidence.valid_until|date:"Y-m-d" }}{% else %}-{% endif %}
   |
   <strong>Status:</strong>
-  {% if evidence.status_label == 'expired' %}<span style="background:#dc2626;color:#fff;padding:0.15rem 0.4rem;border-radius:3px;">Expired</span>
-  {% elif evidence.status_label == 'expiring' %}<span style="background:#f59e0b;color:#000;padding:0.15rem 0.4rem;border-radius:3px;">Expiring in {{ evidence.expires_within_days }} days</span>
-  {% elif evidence.status_label == 'unverified' %}<span style="background:#6b7280;color:#fff;padding:0.15rem 0.4rem;border-radius:3px;">Unverified</span>
-  {% else %}<span style="background:#16a34a;color:#fff;padding:0.15rem 0.4rem;border-radius:3px;">Valid</span>{% endif %}
+  {% if evidence.status_label == 'expired' %}<span class="badge badge-danger">Expired</span>
+  {% elif evidence.status_label == 'expiring' %}<span class="badge badge-warning">Expiring in {{ evidence.expires_within_days }} days</span>
+  {% elif evidence.status_label == 'unverified' %}<span class="badge badge-neutral">Unverified</span>
+  {% else %}<span class="badge badge-success">Valid</span>{% endif %}
 </p>
 <p>
   <strong>Collected:</strong> {{ evidence.collected_at|date:"Y-m-d H:i" }}
@@ -41,7 +41,7 @@
     <form method="post" action="{% url 'evidence_verify' evidence.pk %}" style="margin-top:0.5rem;display:flex;gap:0.5rem;">
       {% csrf_token %}
       <input type="text" name="notes" placeholder="verification notes (optional)" style="padding:0.3rem;flex:1;">
-      <button type="submit" style="padding:0.3rem 0.8rem;background:#16a34a;color:#fff;border:none;border-radius:3px;cursor:pointer;">Verify</button>
+      <button type="submit" class="btn btn-success btn-sm">Verify</button>
     </form>
   </div>
 {% endif %}

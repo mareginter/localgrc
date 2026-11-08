@@ -1,4 +1,4 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
 <p><a href="{% url 'policy_list' %}">&lt;- Back to policies</a></p>
 <h1>{{ policy.code }} - {{ policy.title }}</h1>
@@ -17,8 +17,8 @@
       <form method="post" action="{% url 'policy_transition' policy.pk %}" style="display:inline-block;margin:0 0.5rem 0 0;">
         {% csrf_token %}
         <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
-        <input type="text" name="comment" placeholder="comment (optional)" style="padding:0.3rem;font-size:0.85rem;width:180px;">
-        <button type="submit" style="padding:0.3rem 0.8rem;background:#2563eb;color:#fff;border:none;border-radius:3px;cursor:pointer;">
+        <input type="text" name="comment" placeholder="comment (optional)" style="width:180px;">
+        <button type="submit" class="btn btn-primary btn-sm">
           Move to {{ t.to_state.label }}
         </button>
       </form>
@@ -42,7 +42,7 @@
     <form method="post" action="{% url 'policy_approve' policy.pk %}" style="margin-top:0.5rem;">
       {% csrf_token %}
       {{ approval_form.as_p }}
-      <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+      <button type="submit" class="btn btn-primary">Save</button>
     </form>
   </details>
 {% else %}
@@ -52,15 +52,15 @@
 {% endif %}
 
 <h2 style="margin-top:2rem;">Version history ({{ versions|length }})</h2>
-<table style="width:100%;border-collapse:collapse;">
-  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
-    <th style="padding:0.4rem;">Version</th><th>Effective</th><th>Next review</th>
+<table>
+  <thead><tr>
+    <th>Version</th><th>Effective</th><th>Next review</th>
     <th>Approved by</th><th>Approved at</th><th>Change</th>
   </tr></thead>
   <tbody>
     {% for v in versions %}
-      <tr style="border-bottom:1px solid #eee;">
-        <td style="padding:0.4rem;">v{{ v.version_number }}</td>
+      <tr>
+        <td>v{{ v.version_number }}</td>
         <td>{{ v.effective_date|default:"-" }}</td>
         <td>{{ v.next_review_date|default:"-" }}</td>
         <td>{{ v.approved_by.full_name|default:"-" }}</td>
@@ -78,20 +78,20 @@
   <form method="post" action="{% url 'version_create' policy.pk %}" enctype="multipart/form-data" style="margin-top:0.5rem;">
     {% csrf_token %}
     {{ version_form.as_p }}
-    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+    <button type="submit" class="btn btn-primary">Save</button>
   </form>
 </details>
 
 {% if current_version and current_version.approvals.all %}
   <h2 style="margin-top:2rem;">Approval trail</h2>
-  <table style="width:100%;border-collapse:collapse;">
-    <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
-      <th style="padding:0.4rem;">Approver</th><th>Decision</th><th>Comment</th><th>When</th>
+  <table>
+    <thead><tr>
+      <th>Approver</th><th>Decision</th><th>Comment</th><th>When</th>
     </tr></thead>
     <tbody>
       {% for a in current_version.approvals.all %}
-        <tr style="border-bottom:1px solid #eee;">
-          <td style="padding:0.4rem;">{{ a.approver.full_name|default:a.approver.email }}</td>
+        <tr>
+          <td>{{ a.approver.full_name|default:a.approver.email }}</td>
           <td>{{ a.get_decision_display }}</td>
           <td>{{ a.comment|default:"-"|truncatechars:80 }}</td>
           <td>{{ a.decided_at|date:"Y-m-d H:i" }}</td>

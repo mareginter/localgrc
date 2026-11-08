@@ -1,18 +1,18 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
 <h1>Frameworks</h1>
 <p style="color:#555;">Compliance frameworks available in this organization.</p>
 
 {% if frameworks %}
-  <table style="width:100%;border-collapse:collapse;">
-    <thead><tr style="border-bottom:2px solid #ddd;text-align:left;">
-      <th style="padding:0.5rem;">Name</th><th>Code</th><th>Category</th>
+  <table>
+    <thead><tr>
+      <th>Name</th><th>Code</th><th>Category</th>
       <th>Versions</th><th>Requirements</th>
     </tr></thead>
     <tbody>
       {% for fw in frameworks %}
-        <tr style="border-bottom:1px solid #eee;">
-          <td style="padding:0.5rem;"><a href="{% url 'framework_detail' fw.pk %}">{{ fw.name }}</a></td>
+        <tr>
+          <td><a href="{% url 'framework_detail' fw.pk %}">{{ fw.name }}</a></td>
           <td>{{ fw.code }}</td>
           <td>{{ fw.category|default:"-" }}</td>
           <td>

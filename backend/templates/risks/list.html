@@ -1,48 +1,65 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<h1>Risks</h1>
-<p>
-  <a href="{% url 'risk_create' %}" style="padding:0.4rem 1rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;">+ New risk</a>
-  <a href="{% url 'risk_matrix' %}" style="margin-left:0.5rem;">View matrix</a>
-</p>
-<form method="get" style="margin:1rem 0;">
-  <input type="text" name="q" value="{{ q }}" placeholder="Search code or title" style="padding:0.4rem;">
-  <select name="status" style="padding:0.4rem;">
+<div class="page-header">
+  <div>
+    <h1>Risks</h1>
+    <p class="page-subtitle">Identified risks and their current level.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'risk_matrix' %}" class="btn btn-neutral">View matrix</a>
+    <a href="{% url 'risk_create' %}" class="btn btn-primary">+ New risk</a>
+  </div>
+</div>
+
+<form method="get" class="card" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;padding:0.75rem 1rem;margin-bottom:1rem;">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search code or title" style="flex:1;min-width:200px;">
+  <select name="status" style="width:auto;min-width:160px;">
     <option value="">All statuses</option>
     {% for v,l in status_choices %}<option value="{{ v }}" {% if v == status %}selected{% endif %}>{{ l }}</option>{% endfor %}
   </select>
-  <select name="category" style="padding:0.4rem;">
+  <select name="category" style="width:auto;min-width:160px;">
     <option value="">All categories</option>
     {% for v,l in category_choices %}<option value="{{ v }}" {% if v == category %}selected{% endif %}>{{ l }}</option>{% endfor %}
   </select>
-  <button type="submit" style="padding:0.4rem 0.8rem;">Filter</button>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  <a href="{% url 'risk_list' %}" class="btn btn-neutral">Reset</a>
 </form>
-<table style="width:100%;border-collapse:collapse;">
-  <thead><tr style="border-bottom:2px solid #ddd;text-align:left;">
-    <th style="padding:0.5rem;">Code</th><th>Title</th><th>Category</th>
-    <th>Status</th><th>Residual</th><th>Level</th><th>Owner</th>
-  </tr></thead>
-  <tbody>
-    {% for r in page %}
-      <tr style="border-bottom:1px solid #eee;">
-        <td style="padding:0.5rem;"><a href="{% url 'risk_detail' r.pk %}">{{ r.code }}</a></td>
-        <td>{{ r.title }}</td>
-        <td>{{ r.get_category_display }}</td>
-        <td>{{ r.get_status_display }}</td>
-        <td>{{ r.residual_score|default:"" }}</td>
-        <td>{{ r.risk_level }}</td>
-        <td>{{ r.owner.full_name|default:"" }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="7" style="padding:1rem;text-align:center;color:#666;">No risks yet. Create one to get started.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <table>
+    <thead><tr>
+      <th>Code</th><th>Title</th><th>Category</th>
+      <th>Status</th><th class="text-right">Residual</th><th>Level</th><th>Owner</th>
+    </tr></thead>
+    <tbody>
+      {% for r in page %}
+        <tr>
+          <td><a href="{% url 'risk_detail' r.pk %}" style="font-weight:600;">{{ r.code }}</a></td>
+          <td>{{ r.title }}</td>
+          <td>{{ r.get_category_display }}</td>
+          <td>{{ r.get_status_display }}</td>
+          <td class="text-right"><strong>{{ r.residual_score|default:"-" }}</strong></td>
+          <td>
+            {% if r.risk_level == 'critical' %}<span class="badge badge-critical">Critical</span>
+            {% elif r.risk_level == 'high' %}<span class="badge badge-high">High</span>
+            {% elif r.risk_level == 'medium' %}<span class="badge badge-medium">Medium</span>
+            {% elif r.risk_level == 'low' %}<span class="badge badge-low">Low</span>
+            {% else %}<span class="badge badge-neutral">{{ r.risk_level|default:"-" }}</span>{% endif %}
+          </td>
+          <td>{{ r.owner.full_name|default:"-" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7"><div class="empty">No risks yet. Create one to get started.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
 {% if page.has_other_pages %}
-  <p style="margin-top:1rem;">
-    {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}"> prev</a>{% endif %}
-    Page {{ page.number }} of {{ page.paginator.num_pages }}
-    {% if page.has_next %}<a href="?page={{ page.next_page_number }}">next </a>{% endif %}
-  </p>
+  <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center;">
+    {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}" class="btn btn-neutral btn-sm">â† Previous</a>{% else %}<span></span>{% endif %}
+    <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?page={{ page.next_page_number }}" class="btn btn-neutral btn-sm">Next â†’</a>{% else %}<span></span>{% endif %}
+  </div>
 {% endif %}
 {% endblock %}

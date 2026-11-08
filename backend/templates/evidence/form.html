@@ -1,4 +1,4 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
 <h1>{{ action }}</h1>
 <p style="padding:0.75rem;background:#eff6ff;border-radius:4px;font-size:0.9rem;max-width:700px;">
@@ -8,7 +8,7 @@
 <form method="post" enctype="multipart/form-data" style="max-width:700px;">
   {% csrf_token %}
   {{ form.as_p }}
-  <button type="submit" style="padding:0.5rem 1.2rem;">Save</button>
+  <button type="submit" class="btn btn-primary">Save</button>
   {% if evidence %}<a href="{% url 'evidence_detail' evidence.pk %}" style="margin-left:1rem;">Cancel</a>
   {% else %}<a href="{% url 'evidence_list' %}" style="margin-left:1rem;">Cancel</a>{% endif %}
 </form>

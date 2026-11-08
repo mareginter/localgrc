@@ -1,32 +1,79 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block content %}
-<header style="background:#fff;border-bottom:1px solid #e5e7eb;padding:0.75rem 0;position:sticky;top:0;z-index:10;">
-  <div style="max-width:1800px;margin:0 auto;padding:0 2rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;font-size:0.92rem;">
-    <a href="{% url 'home' %}" style="font-weight:700;font-size:1.05rem;text-decoration:none;color:#111827;margin-right:0.5rem;">LocalGRC</a>
-    <a href="{% url 'risk_list' %}">Risks</a>
-    <a href="{% url 'risk_matrix' %}">Matrix</a>
-    <a href="{% url 'asset_list' %}">Assets</a>
-    <a href="{% url 'framework_list' %}">Frameworks</a>
-    <a href="{% url 'control_list' %}">Controls</a>
-    <a href="{% url 'framework_coverage' %}">Coverage</a>
-    <a href="{% url 'policy_list' %}">Policies</a>
-    <a href="{% url 'audit_list' %}">Audits</a>
-    <a href="{% url 'vendor_list' %}">Vendors</a>
-    <a href="{% url 'incident_list' %}">Incidents</a>
-    <a href="{% url 'deadline_dashboard' %}">Deadlines</a>
-    <a href="{% url 'evidence_list' %}">Evidence</a>
-    <a href="{% url 'assistant_home' %}">Assistant</a>
-    <a href="/admin/" style="margin-left:auto;color:#666;">Admin</a>
+<style>
+  .topbar {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: saturate(180%) blur(8px);
+    -webkit-backdrop-filter: saturate(180%) blur(8px);
+    border-bottom: 1px solid var(--c-border);
+    padding: 0.65rem 0; position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-inner {
+    max-width: 1800px; margin: 0 auto; padding: 0 2rem;
+    display: flex; align-items: center; gap: 0.25rem;
+    flex-wrap: wrap; font-size: 0.9rem;
+  }
+  .brand {
+    font-weight: 800; font-size: 1.05rem; color: var(--c-text);
+    text-decoration: none; margin-right: 0.75rem; letter-spacing: -0.01em;
+    display: inline-flex; align-items: center;
+  }
+  .brand:hover { text-decoration: none; color: var(--c-primary); }
+  .brand::before {
+    content: ""; display: inline-block; width: 8px; height: 8px;
+    background: var(--c-primary); border-radius: 50%; margin-right: 0.55rem;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+  }
+  .nav { display: flex; gap: 0.1rem; align-items: center; flex-wrap: wrap; }
+  .nav a {
+    padding: 0.42rem 0.7rem; border-radius: var(--radius);
+    color: #4b5563; text-decoration: none; font-weight: 500;
+    transition: all var(--transition); white-space: nowrap;
+  }
+  .nav a:hover { background: #f3f4f6; color: var(--c-text); text-decoration: none; }
+  .nav a.active { background: #eff6ff; color: var(--c-primary); font-weight: 600; }
+  .topbar-admin {
+    margin-left: auto; padding: 0.42rem 0.7rem; font-size: 0.82rem;
+    color: var(--c-text-muted); text-decoration: none; border-radius: var(--radius);
+  }
+  .topbar-admin:hover { background: #f3f4f6; color: var(--c-text); text-decoration: none; }
+  .main-wrap { max-width: 1800px; margin: 0 auto; padding: 2rem; }
+  @media (max-width: 700px) {
+    .topbar-inner { padding: 0 1rem; }
+    .main-wrap { padding: 1rem; }
+    .nav a { padding: 0.35rem 0.5rem; font-size: 0.85rem; }
+  }
+</style>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="{% url 'home' %}" class="brand">LocalGRC</a>
+    <nav class="nav">
+      <a href="{% url 'risk_list' %}" class="{% if '/risks/' in request.path and '/risks/matrix/' not in request.path and '/risks/assets/' not in request.path %}active{% endif %}">Risks</a>
+      <a href="{% url 'risk_matrix' %}" class="{% if '/risks/matrix/' in request.path %}active{% endif %}">Matrix</a>
+      <a href="{% url 'asset_list' %}" class="{% if '/risks/assets/' in request.path %}active{% endif %}">Assets</a>
+      <a href="{% url 'framework_list' %}" class="{% if '/frameworks/' in request.path %}active{% endif %}">Frameworks</a>
+      <a href="{% url 'control_list' %}" class="{% if '/controls/' in request.path and '/controls/coverage/' not in request.path %}active{% endif %}">Controls</a>
+      <a href="{% url 'framework_coverage' %}" class="{% if '/controls/coverage/' in request.path %}active{% endif %}">Coverage</a>
+      <a href="{% url 'policy_list' %}" class="{% if '/policies/' in request.path %}active{% endif %}">Policies</a>
+      <a href="{% url 'audit_list' %}" class="{% if '/audits/' in request.path %}active{% endif %}">Audits</a>
+      <a href="{% url 'vendor_list' %}" class="{% if '/vendors/' in request.path %}active{% endif %}">Vendors</a>
+      <a href="{% url 'incident_list' %}" class="{% if '/incidents/' in request.path and '/incidents/deadlines/' not in request.path %}active{% endif %}">Incidents</a>
+      <a href="{% url 'deadline_dashboard' %}" class="{% if '/incidents/deadlines/' in request.path %}active{% endif %}">Deadlines</a>
+      <a href="{% url 'evidence_list' %}" class="{% if '/evidence/' in request.path %}active{% endif %}">Evidence</a>
+      <a href="{% url 'assistant_home' %}" class="{% if '/assistant/' in request.path %}active{% endif %}">Assistant</a>
+    </nav>
+    <a href="/admin/" class="topbar-admin">Admin</a>
   </div>
 </header>
-<main style="max-width:1800px;margin:0 auto;padding:2rem;">
+
+<main class="main-wrap">
   {% if messages %}
-    {% for m in messages %}
-      <div style="padding:0.6rem 1rem;margin:0 0 1rem 0;border-radius:4px;
-        background:{% if m.tags == 'error' %}#fee{% else %}#e7f7e7{% endif %};">
-        {{ m }}
-      </div>
-    {% endfor %}
+    <div class="messages">
+      {% for m in messages %}
+        <div class="message {{ m.tags }}">{{ m }}</div>
+      {% endfor %}
+    </div>
   {% endif %}
   {% block risks_content %}{% endblock %}
 </main>

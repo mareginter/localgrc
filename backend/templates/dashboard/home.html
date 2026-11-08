@@ -1,203 +1,240 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;">
-  <div>
-    <h1 style="margin:0 0 0.25rem 0;">{{ org.name }}</h1>
-    <p style="color:#666;margin:0;font-size:0.9rem;">{{ now|date:"l, j F Y - H:i" }}</p>
+<style>
+  .dash { display:flex; flex-direction:column; gap:1.25rem; }
+  .dash-hero { display:flex; justify-content:space-between; align-items:flex-end;
+               flex-wrap:wrap; gap:1rem; padding-bottom:1rem;
+               border-bottom:1px solid #e5e7eb; }
+  .dash-hero h1 { margin:0 0 0.25rem 0; font-size:1.75rem; }
+  .dash-hero .meta { color:#6b7280; font-size:0.875rem; }
+  .quick-actions { display:flex; gap:0.5rem; flex-wrap:wrap; }
+  .dash-alerts { display:flex; flex-direction:column; gap:0.5rem; }
+  .dash-alert { padding:0.7rem 1rem; border-radius:6px; border-left:4px solid #9ca3af;
+                font-size:0.9rem; display:flex; align-items:center; gap:0.6rem;
+                background:#f9fafb; color:#374151; }
+  .dash-alert.critical { background:#fef2f2; border-color:#dc2626; color:#7f1d1d; }
+  .dash-alert.high     { background:#fff7ed; border-color:#ea580c; color:#7c2d12; }
+  .dash-alert.info     { background:#eff6ff; border-color:#2563eb; color:#1e3a8a; }
+  .dash-alert a { color:inherit; text-decoration:none; font-weight:500; }
+  .dash-alert a:hover { text-decoration:underline; }
+  .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; }
+  .kpi { background:#fff; border:1px solid #e5e7eb; border-radius:8px;
+         padding:1.1rem 1.25rem; text-decoration:none; color:inherit;
+         transition:all 0.12s; display:flex; flex-direction:column; gap:0.35rem; }
+  .kpi:hover { border-color:#2563eb; box-shadow:0 4px 14px rgba(37,99,235,0.08); transform:translateY(-1px); }
+  .kpi-label { font-size:0.72rem; color:#6b7280; text-transform:uppercase;
+               letter-spacing:0.07em; font-weight:700; }
+  .kpi-value { font-size:2.1rem; font-weight:800; line-height:1; color:#111827; }
+  .kpi-sub { font-size:0.8rem; color:#6b7280; }
+  .kpi-sub strong { color:#dc2626; }
+  .kpi-sub strong.high { color:#ea580c; }
+  .kpi-sub strong.med { color:#ca8a04; }
+  .kpi-sub strong.good { color:#16a34a; }
+  .grid-2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(380px, 1fr)); gap:1.25rem; }
+  .grid-3 { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem; }
+  .list-row { display:flex; justify-content:space-between; align-items:center;
+              padding:0.55rem 0; border-bottom:1px solid #f3f4f6;
+              font-size:0.9rem; gap:0.5rem; }
+  .list-row:last-child { border-bottom:none; }
+  .list-row a { color:#111827; text-decoration:none; font-weight:500; }
+  .list-row a:hover { color:#2563eb; }
+  .score-badge { font-size:0.75rem; font-weight:700; padding:0.15rem 0.5rem;
+                 border-radius:4px; white-space:nowrap; }
+  .score-badge.critical { background:#fecaca; color:#7f1d1d; }
+  .score-badge.high     { background:#fed7aa; color:#7c2d12; }
+  .score-badge.medium   { background:#fef3c7; color:#78350f; }
+  .score-badge.low      { background:#dcfce7; color:#14532d; }
+  .progress-bar { background:#f3f4f6; height:8px; border-radius:4px; overflow:hidden; }
+  .progress-bar > div { height:100%; border-radius:4px;
+                        background:linear-gradient(90deg, #22c55e, #16a34a);
+                        transition:width 0.4s ease; }
+  .activity-row { display:grid; grid-template-columns:130px 80px 1fr auto;
+                  gap:0.75rem; padding:0.5rem 0; border-bottom:1px solid #f3f4f6;
+                  font-size:0.85rem; align-items:center; }
+  .activity-row:last-child { border-bottom:none; }
+  .activity-row .time { color:#6b7280; font-size:0.78rem; }
+  .activity-row .action { font-weight:700; font-size:0.72rem; padding:0.1rem 0.45rem;
+                          border-radius:3px; text-align:center;
+                          text-transform:uppercase; letter-spacing:0.03em; }
+  .activity-row .action.create { background:#dcfce7; color:#166534; }
+  .activity-row .action.update { background:#dbeafe; color:#1e40af; }
+  .activity-row .action.delete { background:#fecaca; color:#991b1b; }
+  .activity-row .actor { color:#6b7280; font-size:0.78rem; }
+  .empty { color:#9ca3af; font-size:0.875rem; text-align:center; padding:1.5rem 0.5rem; }
+  @media (max-width:600px) { .activity-row { grid-template-columns:1fr; gap:0.15rem; } }
+</style>
+
+<div class="dash">
+  <div class="dash-hero">
+    <div>
+      <h1>{{ org.name }}</h1>
+      <div class="meta">{{ now|date:"l, j F Y - H:i" }}</div>
+    </div>
+    <div class="quick-actions">
+      <a href="{% url 'risk_create' %}" class="btn btn-primary">+ Risk</a>
+      <a href="{% url 'control_create' %}" class="btn btn-info">+ Control</a>
+      <a href="{% url 'policy_create' %}" class="btn btn-amber">+ Policy</a>
+      <a href="{% url 'audit_create' %}" class="btn btn-violet">+ Audit</a>
+      <a href="{% url 'vendor_create' %}" class="btn btn-slate">+ Vendor</a>
+      <a href="{% url 'incident_create' %}" class="btn btn-danger">+ Incident</a>
+      <a href="{% url 'evidence_create' %}" class="btn btn-success">+ Evidence</a>
+    </div>
   </div>
-</div>
 
-{% if alerts %}
-  <div style="margin-bottom:1.5rem;">
-    {% for alert in alerts %}
-      <div style="padding:0.6rem 1rem;margin:0.4rem 0;border-radius:4px;
-        {% if alert.severity == 'critical' %}background:#fee;border-left:4px solid #dc2626;
-        {% elif alert.severity == 'high' %}background:#fef3c7;border-left:4px solid #f59e0b;
-        {% else %}background:#eff6ff;border-left:4px solid #2563eb;{% endif %}">
-        <a href="{{ alert.link }}" style="text-decoration:none;color:#111;">{{ alert.text }}</a>
-      </div>
-    {% endfor %}
+  {% if alerts %}
+    <div class="dash-alerts">
+      {% for alert in alerts %}
+        <div class="dash-alert {{ alert.severity }}">
+          <span>{% if alert.severity == 'critical' %}!{% elif alert.severity == 'high' %}*{% else %}i{% endif %}</span>
+          <a href="{{ alert.link }}">{{ alert.text }}</a>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="kpi-grid">
+    <a href="{% url 'risk_list' %}" class="kpi">
+      <span class="kpi-label">Total risks</span>
+      <span class="kpi-value">{{ risk_total }}</span>
+      <span class="kpi-sub">
+        {% if risk_by_level.critical %}<strong>{{ risk_by_level.critical }}</strong> critical{% endif %}
+        {% if risk_by_level.high %}{% if risk_by_level.critical %} / {% endif %}<strong class="high">{{ risk_by_level.high }}</strong> high{% endif %}
+        {% if not risk_by_level.critical and not risk_by_level.high %}<strong class="good">All under control</strong>{% endif %}
+      </span>
+    </a>
+    <a href="{% url 'framework_coverage' %}" class="kpi">
+      <span class="kpi-label">Compliance coverage</span>
+      <span class="kpi-value">{% if coverage_rows %}{{ coverage_rows.0.pct }}%{% else %}-{% endif %}</span>
+      <span class="kpi-sub">{{ coverage_rows|length }} framework{{ coverage_rows|length|pluralize }}</span>
+    </a>
+    <a href="{% url 'audit_list' %}" class="kpi">
+      <span class="kpi-label">Open findings</span>
+      <span class="kpi-value">{{ findings_summary.total }}</span>
+      <span class="kpi-sub">
+        {% if findings_summary.major_nc %}<strong>{{ findings_summary.major_nc }}</strong> major{% endif %}
+        {% if findings_summary.minor_nc %}{% if findings_summary.major_nc %} / {% endif %}<strong class="high">{{ findings_summary.minor_nc }}</strong> minor{% endif %}
+        {% if not findings_summary.major_nc and not findings_summary.minor_nc %}<strong class="good">No critical findings</strong>{% endif %}
+      </span>
+    </a>
+    <a href="{% url 'incident_list' %}" class="kpi">
+      <span class="kpi-label">Open incidents</span>
+      <span class="kpi-value">{{ open_incidents }}</span>
+      <span class="kpi-sub">
+        {% if overdue_deadlines %}<strong>{{ overdue_deadlines|length }}</strong> overdue deadlines
+        {% elif pending_deadlines %}<strong class="med">{{ pending_deadlines|length }}</strong> pending
+        {% else %}<strong class="good">No deadlines</strong>{% endif %}
+      </span>
+    </a>
   </div>
-{% endif %}
 
-<!-- Quick actions -->
-<div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
-  <a href="{% url 'risk_create' %}" style="padding:0.4rem 0.9rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Risk</a>
-  <a href="{% url 'control_create' %}" style="padding:0.4rem 0.9rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Control</a>
-  <a href="{% url 'policy_create' %}" style="padding:0.4rem 0.9rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Policy</a>
-  <a href="{% url 'audit_create' %}" style="padding:0.4rem 0.9rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Audit</a>
-  <a href="{% url 'vendor_create' %}" style="padding:0.4rem 0.9rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Vendor</a>
-  <a href="{% url 'incident_create' %}" style="padding:0.4rem 0.9rem;background:#dc2626;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Incident</a>
-  <a href="{% url 'evidence_create' %}" style="padding:0.4rem 0.9rem;background:#16a34a;color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">+ Evidence</a>
-</div>
-
-<!-- KPI cards -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-bottom:1.5rem;">
-  <a href="{% url 'risk_list' %}" style="text-decoration:none;color:inherit;">
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
-      <div style="color:#666;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;">Risks</div>
-      <div style="font-size:2rem;font-weight:bold;line-height:1.1;">{{ risk_total }}</div>
-      <div style="font-size:0.8rem;margin-top:0.4rem;">
-        {% if risk_by_level.critical %}<span style="color:#dc2626;">{{ risk_by_level.critical }} critical</span>{% endif %}
-        {% if risk_by_level.high %}<span style="color:#f59e0b;margin-left:0.5rem;">{{ risk_by_level.high }} high</span>{% endif %}
-      </div>
-    </div>
-  </a>
-  <a href="{% url 'framework_coverage' %}" style="text-decoration:none;color:inherit;">
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
-      <div style="color:#666;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;">Coverage</div>
-      <div style="font-size:2rem;font-weight:bold;line-height:1.1;">
-        {% if coverage_rows %}{{ coverage_rows.0.pct }}%{% else %}-{% endif %}
-      </div>
-      <div style="font-size:0.8rem;color:#666;margin-top:0.4rem;">{{ coverage_rows|length }} framework(s)</div>
-    </div>
-  </a>
-  <a href="{% url 'audit_list' %}" style="text-decoration:none;color:inherit;">
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
-      <div style="color:#666;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;">Open findings</div>
-      <div style="font-size:2rem;font-weight:bold;line-height:1.1;">{{ findings_summary.total }}</div>
-      <div style="font-size:0.8rem;margin-top:0.4rem;">
-        {% if findings_summary.major_nc %}<span style="color:#dc2626;">{{ findings_summary.major_nc }} major NC</span>{% endif %}
-        {% if findings_summary.minor_nc %}<span style="color:#f59e0b;margin-left:0.5rem;">{{ findings_summary.minor_nc }} minor</span>{% endif %}
-      </div>
-    </div>
-  </a>
-  <a href="{% url 'incident_list' %}" style="text-decoration:none;color:inherit;">
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
-      <div style="color:#666;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;">Open incidents</div>
-      <div style="font-size:2rem;font-weight:bold;line-height:1.1;">{{ open_incidents }}</div>
-      <div style="font-size:0.8rem;margin-top:0.4rem;">
-        {% if overdue_deadlines %}<span style="color:#dc2626;">{{ overdue_deadlines|length }} deadlines overdue</span>
-        {% elif pending_deadlines %}<span style="color:#f59e0b;">{{ pending_deadlines|length }} pending deadlines</span>
-        {% else %}<span style="color:#666;">No deadlines</span>{% endif %}
-      </div>
-    </div>
-  </a>
-</div>
-
-<!-- Row 2: Top risks + coverage -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:1rem;margin-bottom:1.5rem;">
-  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
-    <h2 style="margin:0 0 0.75rem 0;font-size:1.05rem;">Top risks by score</h2>
-    {% if top_risks %}
-      <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+  <div class="grid-2">
+    <div class="card">
+      <h2>Top risks by score <a href="{% url 'risk_list' %}">View all -></a></h2>
+      {% if top_risks %}
         {% for r in top_risks %}
-          <tr style="border-bottom:1px solid #f3f4f6;">
-            <td style="padding:0.4rem 0;width:70px;">
-              <a href="{% url 'risk_detail' r.pk %}" style="text-decoration:none;color:#111;">{{ r.code }}</a>
-            </td>
-            <td style="padding:0.4rem 0;">{{ r.title|truncatechars:45 }}</td>
-            <td style="padding:0.4rem 0;text-align:right;font-weight:bold;
-              color:{% if r.risk_level == 'critical' %}#dc2626{% elif r.risk_level == 'high' %}#f59e0b{% elif r.risk_level == 'medium' %}#eab308{% else %}#16a34a{% endif %};">
-              {{ r.residual_score|default:r.inherent_score }}
-            </td>
-          </tr>
-        {% endfor %}
-      </table>
-    {% else %}
-      <p style="color:#666;font-size:0.9rem;">No scored risks yet.</p>
-    {% endif %}
-  </div>
-  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
-    <h2 style="margin:0 0 0.75rem 0;font-size:1.05rem;">Compliance coverage</h2>
-    {% if coverage_rows %}
-      {% for row in coverage_rows %}
-        <div style="margin-bottom:0.9rem;">
-          <div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:0.2rem;">
-            <a href="{% url 'framework_detail' row.framework.pk %}" style="text-decoration:none;color:#111;">
-              {{ row.framework.name }} {{ row.version.version }}
+          <div class="list-row">
+            <a href="{% url 'risk_detail' r.pk %}" style="flex:1;min-width:0;">
+              <span style="color:#6b7280;font-size:0.72rem;font-weight:700;">{{ r.code }}</span>
+              {{ r.title|truncatechars:50 }}
             </a>
-            <strong>{{ row.pct }}%</strong>
+            <span class="score-badge {% if r.risk_level == 'critical' %}critical{% elif r.risk_level == 'high' %}high{% elif r.risk_level == 'medium' %}medium{% else %}low{% endif %}">
+              {{ r.residual_score|default:r.inherent_score }}
+            </span>
           </div>
-          <div style="background:#e5e7eb;height:8px;border-radius:4px;">
-            <div style="background:#16a34a;height:8px;border-radius:4px;width:{{ row.pct }}%;"></div>
+        {% endfor %}
+      {% else %}
+        <div class="empty">No scored risks yet.</div>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h2>Compliance coverage <a href="{% url 'framework_coverage' %}">Details -></a></h2>
+      {% if coverage_rows %}
+        {% for row in coverage_rows %}
+          <div style="margin-bottom:1rem;">
+            <div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:0.3rem;gap:0.5rem;">
+              <a href="{% url 'framework_detail' row.framework.pk %}" style="text-decoration:none;color:#111827;font-weight:500;">
+                {{ row.framework.name }} {{ row.version.version }}
+              </a>
+              <strong>{{ row.pct }}%</strong>
+            </div>
+            <div class="progress-bar"><div style="width:{{ row.pct }}%;"></div></div>
+            <div style="font-size:0.72rem;color:#6b7280;margin-top:0.3rem;">
+              {{ row.covered }} / {{ row.total }} requirements fully covered
+            </div>
           </div>
-          <div style="font-size:0.75rem;color:#666;margin-top:0.2rem;">
-            {{ row.covered }} / {{ row.total }} fully covered
-          </div>
-        </div>
-      {% endfor %}
-    {% else %}
-      <p style="color:#666;font-size:0.9rem;">No frameworks configured.</p>
-    {% endif %}
+        {% endfor %}
+      {% else %}
+        <div class="empty">No frameworks configured.</div>
+      {% endif %}
+    </div>
   </div>
-</div>
 
-<!-- Row 3: 3 small cards -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1.5rem;">
-  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
-    <h2 style="margin:0 0 0.75rem 0;font-size:1rem;">Upcoming deadlines</h2>
-    {% if pending_deadlines %}
-      {% for d in pending_deadlines %}
-        <div style="font-size:0.85rem;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;">
-          <a href="{% url 'incident_detail' d.incident.pk %}" style="text-decoration:none;color:#111;">{{ d.incident.code }}</a>
-          <span style="color:#666;font-size:0.75rem;"> {{ d.get_regulation_display|truncatechars:18 }}</span>
-          <div style="font-size:0.75rem;color:{% if d.status_label == 'urgent' %}#f59e0b{% else %}#666{% endif %};">
-            {{ d.deadline_at|timeuntil:now }}
+  <div class="grid-3">
+    <div class="card">
+      <h2>Upcoming deadlines <a href="{% url 'deadline_dashboard' %}">All -></a></h2>
+      {% if pending_deadlines %}
+        {% for d in pending_deadlines %}
+          <div class="list-row">
+            <div style="min-width:0;flex:1;">
+              <a href="{% url 'incident_detail' d.incident.pk %}">{{ d.incident.code }}</a>
+              <div style="font-size:0.72rem;color:#6b7280;">{{ d.get_regulation_display|truncatechars:24 }}</div>
+            </div>
+            <span style="font-size:0.78rem;font-weight:600;white-space:nowrap;
+                         color:{% if d.status_label == 'urgent' %}#ea580c{% else %}#6b7280{% endif %};">
+              {{ d.deadline_at|timeuntil:now }}
+            </span>
           </div>
-        </div>
-      {% endfor %}
-    {% else %}
-      <p style="color:#666;font-size:0.85rem;">No pending deadlines.</p>
-    {% endif %}
-  </div>
-  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
-    <h2 style="margin:0 0 0.75rem 0;font-size:1rem;">Evidence</h2>
-    <div style="font-size:0.9rem;">
-      <div style="display:flex;justify-content:space-between;padding:0.35rem 0;">
-        <a href="{% url 'evidence_list' %}?status=expired" style="text-decoration:none;color:{% if expired_evidence_count %}#dc2626{% else %}#666{% endif %};">Expired</a>
-        <strong>{{ expired_evidence_count }}</strong>
+        {% endfor %}
+      {% else %}
+        <div class="empty">No pending deadlines.</div>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h2>Evidence <a href="{% url 'evidence_dashboard' %}">Dashboard -></a></h2>
+      <div class="list-row">
+        <a href="{% url 'evidence_list' %}?status=expired">Expired</a>
+        <strong {% if expired_evidence_count %}style="color:#dc2626;"{% endif %}>{{ expired_evidence_count }}</strong>
       </div>
-      <div style="display:flex;justify-content:space-between;padding:0.35rem 0;">
-        <a href="{% url 'evidence_list' %}?status=expiring" style="text-decoration:none;color:{% if expiring_evidence_count %}#f59e0b{% else %}#666{% endif %};">Expiring (30d)</a>
-        <strong>{{ expiring_evidence_count }}</strong>
+      <div class="list-row">
+        <a href="{% url 'evidence_list' %}?status=expiring">Expiring (30d)</a>
+        <strong {% if expiring_evidence_count %}style="color:#ea580c;"{% endif %}>{{ expiring_evidence_count }}</strong>
       </div>
-      <div style="display:flex;justify-content:space-between;padding:0.35rem 0;">
-        <a href="{% url 'evidence_list' %}?status=unverified" style="text-decoration:none;color:#666;">Unverified</a>
+      <div class="list-row">
+        <a href="{% url 'evidence_list' %}?status=unverified">Unverified</a>
         <strong>{{ unverified_evidence_count }}</strong>
       </div>
     </div>
-  </div>
-  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
-    <h2 style="margin:0 0 0.75rem 0;font-size:1rem;">Vendors & policies</h2>
-    <div style="font-size:0.9rem;">
-      <div style="display:flex;justify-content:space-between;padding:0.35rem 0;">
-        <a href="{% url 'vendor_list' %}" style="text-decoration:none;color:{% if critical_vendors_no_dpa_count %}#dc2626{% else %}#666{% endif %};">Critical w/o DPA</a>
-        <strong>{{ critical_vendors_no_dpa_count }}</strong>
+    <div class="card">
+      <h2>Vendors &amp; policies</h2>
+      <div class="list-row">
+        <a href="{% url 'vendor_list' %}">Critical vendors w/o DPA</a>
+        <strong {% if critical_vendors_no_dpa_count %}style="color:#dc2626;"{% endif %}>{{ critical_vendors_no_dpa_count }}</strong>
       </div>
-      <div style="display:flex;justify-content:space-between;padding:0.35rem 0;">
-        <a href="{% url 'policy_list' %}?status=in_review" style="text-decoration:none;color:#666;">Policies pending</a>
+      <div class="list-row">
+        <a href="{% url 'policy_list' %}?status=in_review">Policies pending review</a>
         <strong>{{ policies_pending }}</strong>
       </div>
-      <div style="display:flex;justify-content:space-between;padding:0.35rem 0;">
-        <a href="{% url 'control_list' %}" style="text-decoration:none;color:#666;">Total controls</a>
+      <div class="list-row">
+        <a href="{% url 'control_list' %}">Total controls</a>
         <strong>{{ control_total }}</strong>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Row 4: recent activity -->
-<div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;">
-  <h2 style="margin:0 0 0.75rem 0;font-size:1.05rem;">Recent activity</h2>
-  {% if recent_activity %}
-    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+  <div class="card">
+    <h2>Recent activity</h2>
+    {% if recent_activity %}
       {% for log in recent_activity %}
-        <tr style="border-bottom:1px solid #f3f4f6;">
-          <td style="padding:0.35rem 0;width:150px;color:#666;">{{ log.created_at|date:"Y-m-d H:i" }}</td>
-          <td style="padding:0.35rem 0;width:100px;">
-            {% if log.action == 'create' %}<span style="color:#16a34a;font-weight:bold;">create</span>
-            {% elif log.action == 'update' %}<span style="color:#2563eb;font-weight:bold;">update</span>
-            {% elif log.action == 'delete' %}<span style="color:#dc2626;font-weight:bold;">delete</span>
-            {% else %}<span style="color:#666;">{{ log.action }}</span>{% endif %}
-          </td>
-          <td style="padding:0.35rem 0;">{{ log.entity_short }}</td>
-          <td style="padding:0.35rem 0;color:#666;">{{ log.actor_name }}</td>
-        </tr>
+        <div class="activity-row">
+          <span class="time">{{ log.created_at|date:"Y-m-d H:i" }}</span>
+          <span class="action {{ log.action }}">{{ log.action }}</span>
+          <span>{{ log.entity_short }}</span>
+          <span class="actor">{{ log.actor_name }}</span>
+        </div>
       {% endfor %}
-    </table>
-  {% else %}
-    <p style="color:#666;font-size:0.9rem;">No activity yet.</p>
-  {% endif %}
+    {% else %}
+      <div class="empty">No activity yet.</div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

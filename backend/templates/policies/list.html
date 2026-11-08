@@ -1,31 +1,31 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
 <h1>Policies</h1>
 <p>
-  <a href="{% url 'policy_create' %}" style="padding:0.4rem 1rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;">+ New policy</a>
+  <a href="{% url 'policy_create' %}" class="btn btn-primary">+ New policy</a>
 </p>
 <form method="get" style="margin:1rem 0;display:flex;gap:0.5rem;flex-wrap:wrap;">
   <input type="text" name="q" value="{{ q }}" placeholder="Search code or title" style="padding:0.4rem;flex:1;min-width:200px;">
-  <select name="status" style="padding:0.4rem;">
+  <select name="status">
     <option value="">All statuses</option>
     {% for v,l in status_choices %}<option value="{{ v }}" {% if v == status %}selected{% endif %}>{{ l }}</option>{% endfor %}
   </select>
-  <select name="category" style="padding:0.4rem;">
+  <select name="category">
     <option value="">All categories</option>
     {% for v,l in category_choices %}<option value="{{ v }}" {% if v == category %}selected{% endif %}>{{ l }}</option>{% endfor %}
   </select>
   <button type="submit" style="padding:0.4rem 0.8rem;">Filter</button>
   <a href="{% url 'policy_list' %}" style="padding:0.4rem 0.8rem;">Reset</a>
 </form>
-<table style="width:100%;border-collapse:collapse;">
-  <thead><tr style="border-bottom:2px solid #ddd;text-align:left;">
-    <th style="padding:0.5rem;">Code</th><th>Title</th><th>Category</th>
+<table>
+  <thead><tr>
+    <th>Code</th><th>Title</th><th>Category</th>
     <th>Status</th><th>Version</th><th>Owner</th>
   </tr></thead>
   <tbody>
     {% for p in page %}
-      <tr style="border-bottom:1px solid #eee;">
-        <td style="padding:0.5rem;"><a href="{% url 'policy_detail' p.pk %}">{{ p.code }}</a></td>
+      <tr>
+        <td><a href="{% url 'policy_detail' p.pk %}">{{ p.code }}</a></td>
         <td>{{ p.title }}</td>
         <td>{{ p.get_category_display }}</td>
         <td>{{ p.get_status_display }}</td>

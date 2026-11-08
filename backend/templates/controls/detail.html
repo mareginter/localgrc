@@ -1,4 +1,4 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
 <p><a href="{% url 'control_list' %}">&lt;- Back to controls</a></p>
 <h1>{{ control.code }} - {{ control.name }}</h1>
@@ -18,7 +18,7 @@
       <form method="post" action="{% url 'control_transition' control.pk %}" style="display:inline-block;margin:0 0.5rem 0 0;">
         {% csrf_token %}
         <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
-        <button type="submit" style="padding:0.3rem 0.8rem;background:#2563eb;color:#fff;border:none;border-radius:3px;cursor:pointer;">
+        <button type="submit" class="btn btn-primary btn-sm">
           Move to {{ t.to_state.label }}
         </button>
       </form>
@@ -33,12 +33,12 @@
     {{ group.grouper.framework.name }} {{ group.grouper.version }}
   </h3>
   <table style="width:100%;border-collapse:collapse;margin-bottom:1rem;">
-    <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
-      <th style="padding:0.4rem;">Code</th><th>Title</th><th>Coverage</th><th>Justification</th>
+    <thead><tr>
+      <th>Code</th><th>Title</th><th>Coverage</th><th>Justification</th>
     </tr></thead>
     <tbody>
       {% for link in group.list %}
-        <tr style="border-bottom:1px solid #eee;">
+        <tr>
           <td style="padding:0.4rem;width:80px;">
             <a href="{% url 'requirement_detail' link.requirement.pk %}">{{ link.requirement.code }}</a>
           </td>
@@ -58,19 +58,19 @@
   <form method="post" action="{% url 'requirement_link_create' control.pk %}" style="margin-top:0.5rem;">
     {% csrf_token %}
     {{ requirement_form.as_p }}
-    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+    <button type="submit" class="btn btn-primary">Save</button>
   </form>
 </details>
 
 <h2 style="margin-top:2rem;">Implementations ({{ implementations|length }})</h2>
-<table style="width:100%;border-collapse:collapse;">
-  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
-    <th style="padding:0.4rem;">Department</th><th>Status</th><th>Last tested</th><th>Next test</th>
+<table>
+  <thead><tr>
+    <th>Department</th><th>Status</th><th>Last tested</th><th>Next test</th>
   </tr></thead>
   <tbody>
     {% for impl in implementations %}
-      <tr style="border-bottom:1px solid #eee;">
-        <td style="padding:0.4rem;">{{ impl.department|default:"Org-wide" }}</td>
+      <tr>
+        <td>{{ impl.department|default:"Org-wide" }}</td>
         <td>{{ impl.get_status_display }}</td>
         <td>{{ impl.last_tested_at|default:"-" }}</td>
         <td>{{ impl.next_test_at|default:"-" }}</td>
@@ -86,7 +86,7 @@
   <form method="post" action="{% url 'implementation_create' control.pk %}" style="margin-top:0.5rem;">
     {% csrf_token %}
     {{ implementation_form.as_p }}
-    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+    <button type="submit" class="btn btn-primary">Save</button>
   </form>
 </details>
 {% endblock %}

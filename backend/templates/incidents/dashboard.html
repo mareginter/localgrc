@@ -1,18 +1,18 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
 <h1>Regulatory deadlines</h1>
 <p><a href="{% url 'incident_list' %}">&lt;- Back to incidents</a></p>
 
 {% if overdue %}
   <h2 style="color:#dc2626;margin-top:1.5rem;">Overdue ({{ overdue|length }})</h2>
-  <table style="width:100%;border-collapse:collapse;">
-    <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
-      <th style="padding:0.4rem;">Incident</th><th>Regulation</th><th>Deadline</th><th>Overdue by</th>
+  <table>
+    <thead><tr>
+      <th>Incident</th><th>Regulation</th><th>Deadline</th><th>Overdue by</th>
     </tr></thead>
     <tbody>
       {% for d in overdue %}
         <tr style="border-bottom:1px solid #eee;background:#fee;">
-          <td style="padding:0.4rem;"><a href="{% url 'incident_detail' d.incident.pk %}">{{ d.incident.code }}</a></td>
+          <td><a href="{% url 'incident_detail' d.incident.pk %}">{{ d.incident.code }}</a></td>
           <td>{{ d.get_regulation_display }}</td>
           <td>{{ d.deadline_at|date:"Y-m-d H:i" }}</td>
           <td>
@@ -26,14 +26,14 @@
 
 {% if pending %}
   <h2 style="margin-top:1.5rem;">Pending ({{ pending|length }})</h2>
-  <table style="width:100%;border-collapse:collapse;">
-    <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
-      <th style="padding:0.4rem;">Incident</th><th>Regulation</th><th>Deadline</th><th>Time remaining</th>
+  <table>
+    <thead><tr>
+      <th>Incident</th><th>Regulation</th><th>Deadline</th><th>Time remaining</th>
     </tr></thead>
     <tbody>
       {% for d in pending %}
         <tr style="border-bottom:1px solid #eee;{% if d.status_label == 'urgent' %}background:#fef3c7;{% endif %}">
-          <td style="padding:0.4rem;"><a href="{% url 'incident_detail' d.incident.pk %}">{{ d.incident.code }}</a></td>
+          <td><a href="{% url 'incident_detail' d.incident.pk %}">{{ d.incident.code }}</a></td>
           <td>{{ d.get_regulation_display }}</td>
           <td>{{ d.deadline_at|date:"Y-m-d H:i" }}</td>
           <td>
@@ -51,14 +51,14 @@
 
 {% if notified %}
   <h2 style="margin-top:1.5rem;">Notified ({{ notified|length }})</h2>
-  <table style="width:100%;border-collapse:collapse;">
-    <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
-      <th style="padding:0.4rem;">Incident</th><th>Regulation</th><th>Deadline</th><th>Notified at</th>
+  <table>
+    <thead><tr>
+      <th>Incident</th><th>Regulation</th><th>Deadline</th><th>Notified at</th>
     </tr></thead>
     <tbody>
       {% for d in notified %}
         <tr style="border-bottom:1px solid #eee;background:#e7f7e7;">
-          <td style="padding:0.4rem;"><a href="{% url 'incident_detail' d.incident.pk %}">{{ d.incident.code }}</a></td>
+          <td><a href="{% url 'incident_detail' d.incident.pk %}">{{ d.incident.code }}</a></td>
           <td>{{ d.get_regulation_display }}</td>
           <td>{{ d.deadline_at|date:"Y-m-d H:i" }}</td>
           <td>{{ d.notified_at|date:"Y-m-d H:i" }}{% if d.regulator_reference %} ({{ d.regulator_reference }}){% endif %}</td>

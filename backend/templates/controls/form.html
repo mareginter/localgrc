@@ -1,10 +1,10 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
 <h1>{{ action }}</h1>
 <form method="post" style="max-width:600px;">
   {% csrf_token %}
   {{ form.as_p }}
-  <button type="submit" style="padding:0.5rem 1.2rem;">Save</button>
+  <button type="submit" class="btn btn-primary">Save</button>
   {% if control %}<a href="{% url 'control_detail' control.pk %}" style="margin-left:1rem;">Cancel</a>
   {% else %}<a href="{% url 'control_list' %}" style="margin-left:1rem;">Cancel</a>{% endif %}
 </form>

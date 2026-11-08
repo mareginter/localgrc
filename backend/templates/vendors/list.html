@@ -1,33 +1,33 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
 <h1>Vendors</h1>
-<p><a href="{% url 'vendor_create' %}" style="padding:0.4rem 1rem;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;">+ New vendor</a></p>
+<p><a href="{% url 'vendor_create' %}" class="btn btn-primary">+ New vendor</a></p>
 <form method="get" style="margin:1rem 0;display:flex;gap:0.5rem;flex-wrap:wrap;">
   <input type="text" name="q" value="{{ q }}" placeholder="Search name" style="padding:0.4rem;flex:1;min-width:200px;">
-  <select name="criticality" style="padding:0.4rem;">
+  <select name="criticality">
     <option value="">All criticality</option>
     {% for v,l in criticality_choices %}<option value="{{ v }}" {% if v == criticality %}selected{% endif %}>{{ l }}</option>{% endfor %}
   </select>
-  <select name="status" style="padding:0.4rem;">
+  <select name="status">
     <option value="">All statuses</option>
     {% for v,l in status_choices %}<option value="{{ v }}" {% if v == status %}selected{% endif %}>{{ l }}</option>{% endfor %}
   </select>
   <button type="submit" style="padding:0.4rem 0.8rem;">Filter</button>
   <a href="{% url 'vendor_list' %}" style="padding:0.4rem 0.8rem;">Reset</a>
 </form>
-<table style="width:100%;border-collapse:collapse;">
-  <thead><tr style="border-bottom:2px solid #ddd;text-align:left;">
-    <th style="padding:0.5rem;">Name</th><th>Category</th><th>Criticality</th>
+<table>
+  <thead><tr>
+    <th>Name</th><th>Category</th><th>Criticality</th>
     <th>Data role</th><th>DPA</th><th>Status</th><th>Assessments</th>
   </tr></thead>
   <tbody>
     {% for v in page %}
-      <tr style="border-bottom:1px solid #eee;">
-        <td style="padding:0.5rem;"><a href="{% url 'vendor_detail' v.pk %}">{{ v.name }}</a></td>
+      <tr>
+        <td><a href="{% url 'vendor_detail' v.pk %}">{{ v.name }}</a></td>
         <td>{{ v.category|default:"-" }}</td>
         <td>
-          {% if v.criticality == 'critical' %}<span style="background:#dc2626;color:#fff;padding:0.15rem 0.4rem;border-radius:3px;font-size:0.85rem;">Critical</span>
-          {% elif v.criticality == 'high' %}<span style="background:#f59e0b;color:#000;padding:0.15rem 0.4rem;border-radius:3px;font-size:0.85rem;">High</span>
+          {% if v.criticality == 'critical' %}<span class="badge badge-danger">Critical</span>
+          {% elif v.criticality == 'high' %}<span class="badge badge-warning">High</span>
           {% else %}{{ v.get_criticality_display }}{% endif %}
         </td>
         <td>{{ v.get_data_processing_role_display }}</td>

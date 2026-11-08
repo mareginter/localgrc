@@ -1,4 +1,4 @@
-{% extends "risks/base_risks.html" %}
+﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
 <p><a href="{% url 'vendor_list' %}">&lt;- Back to vendors</a></p>
 <h1>{{ vendor.name }}</h1>
@@ -22,8 +22,8 @@
       <form method="post" action="{% url 'vendor_transition' vendor.pk %}" style="display:inline-block;margin:0 0.5rem 0 0;">
         {% csrf_token %}
         <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
-        <input type="text" name="comment" placeholder="comment" style="padding:0.3rem;font-size:0.85rem;width:160px;">
-        <button type="submit" style="padding:0.3rem 0.8rem;background:#2563eb;color:#fff;border:none;border-radius:3px;cursor:pointer;">
+        <input type="text" name="comment" placeholder="comment" style="width:160px;">
+        <button type="submit" class="btn btn-primary btn-sm">
           Move to {{ t.to_state.label }}
         </button>
       </form>
@@ -32,14 +32,14 @@
 {% endif %}
 
 <h2 style="margin-top:2rem;">Assessments ({{ assessments|length }})</h2>
-<table style="width:100%;border-collapse:collapse;">
-  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
-    <th style="padding:0.4rem;">Date</th><th>Score</th><th>Rating</th><th>Next</th><th>By</th>
+<table>
+  <thead><tr>
+    <th>Date</th><th>Score</th><th>Rating</th><th>Next</th><th>By</th>
   </tr></thead>
   <tbody>
     {% for a in assessments %}
-      <tr style="border-bottom:1px solid #eee;">
-        <td style="padding:0.4rem;">{{ a.assessment_date }}</td>
+      <tr>
+        <td>{{ a.assessment_date }}</td>
         <td>{{ a.score|default:"-" }}</td>
         <td>{{ a.get_risk_rating_display }}</td>
         <td>{{ a.next_assessment_date|default:"-" }}</td>
@@ -55,19 +55,19 @@
   <form method="post" action="{% url 'vendor_assessment_create' vendor.pk %}" style="margin-top:0.5rem;">
     {% csrf_token %}
     {{ assessment_form.as_p }}
-    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+    <button type="submit" class="btn btn-primary">Save</button>
   </form>
 </details>
 
 <h2 style="margin-top:2rem;">Risks introduced ({{ risk_links|length }})</h2>
-<table style="width:100%;border-collapse:collapse;">
-  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
-    <th style="padding:0.4rem;">Risk</th><th>Title</th><th>Note</th>
+<table>
+  <thead><tr>
+    <th>Risk</th><th>Title</th><th>Note</th>
   </tr></thead>
   <tbody>
     {% for vl in risk_links %}
-      <tr style="border-bottom:1px solid #eee;">
-        <td style="padding:0.4rem;"><a href="{% url 'risk_detail' vl.risk.pk %}">{{ vl.risk.code }}</a></td>
+      <tr>
+        <td><a href="{% url 'risk_detail' vl.risk.pk %}">{{ vl.risk.code }}</a></td>
         <td>{{ vl.risk.title }}</td>
         <td>{{ vl.note|truncatechars:80|default:"-" }}</td>
       </tr>
@@ -81,19 +81,19 @@
   <form method="post" action="{% url 'vendor_risk_link_create' vendor.pk %}" style="margin-top:0.5rem;">
     {% csrf_token %}
     {{ risk_form.as_p }}
-    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+    <button type="submit" class="btn btn-primary">Save</button>
   </form>
 </details>
 
 <h2 style="margin-top:2rem;">Controls provided ({{ control_links|length }})</h2>
-<table style="width:100%;border-collapse:collapse;">
-  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
-    <th style="padding:0.4rem;">Control</th><th>Name</th><th>Verified</th><th>Notes</th>
+<table>
+  <thead><tr>
+    <th>Control</th><th>Name</th><th>Verified</th><th>Notes</th>
   </tr></thead>
   <tbody>
     {% for cl in control_links %}
-      <tr style="border-bottom:1px solid #eee;">
-        <td style="padding:0.4rem;"><a href="{% url 'control_detail' cl.control.pk %}">{{ cl.control.code }}</a></td>
+      <tr>
+        <td><a href="{% url 'control_detail' cl.control.pk %}">{{ cl.control.code }}</a></td>
         <td>{{ cl.control.name }}</td>
         <td>{% if cl.verified %}<span style="color:#16a34a;">Yes</span> ({{ cl.verified_at|date:"Y-m-d" }}){% else %}<span style="color:#dc2626;">No</span>{% endif %}</td>
         <td>{{ cl.notes|truncatechars:60|default:"-" }}</td>
@@ -108,7 +108,7 @@
   <form method="post" action="{% url 'vendor_control_link_create' vendor.pk %}" style="margin-top:0.5rem;">
     {% csrf_token %}
     {{ control_form.as_p }}
-    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+    <button type="submit" class="btn btn-primary">Save</button>
   </form>
 </details>
 {% endblock %}
