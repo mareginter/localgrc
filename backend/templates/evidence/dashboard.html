@@ -1,0 +1,69 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<h1>Evidence dashboard</h1>
+<p><a href="{% url 'evidence_list' %}">&lt;- Back to evidence</a></p>
+<p style="color:#555;">Total: {{ total }} evidences</p>
+
+{% if expired %}
+  <h2 style="color:#dc2626;margin-top:1.5rem;">Expired ({{ expired|length }})</h2>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
+      <th style="padding:0.4rem;">Title</th><th>Linked to</th><th>Expired on</th><th>Days overdue</th>
+    </tr></thead>
+    <tbody>
+      {% for e in expired %}
+        <tr style="border-bottom:1px solid #eee;background:#fee;">
+          <td style="padding:0.4rem;"><a href="{% url 'evidence_detail' e.pk %}">{{ e.title }}</a></td>
+          <td>{{ e.target_type_label }}: {{ e.target_display|truncatechars:40 }}</td>
+          <td>{{ e.valid_until }}</td>
+          <td><strong style="color:#dc2626;">{{ e.valid_until|timesince }}</strong></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
+{% if expiring %}
+  <h2 style="color:#f59e0b;margin-top:1.5rem;">Expiring in next 30 days ({{ expiring|length }})</h2>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
+      <th style="padding:0.4rem;">Title</th><th>Linked to</th><th>Valid until</th><th>Days left</th>
+    </tr></thead>
+    <tbody>
+      {% for e in expiring %}
+        <tr style="border-bottom:1px solid #eee;background:#fef3c7;">
+          <td style="padding:0.4rem;"><a href="{% url 'evidence_detail' e.pk %}">{{ e.title }}</a></td>
+          <td>{{ e.target_type_label }}: {{ e.target_display|truncatechars:40 }}</td>
+          <td>{{ e.valid_until }}</td>
+          <td><strong>{{ e.expires_within_days }}</strong></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
+{% if unverified %}
+  <h2 style="margin-top:1.5rem;">Unverified ({{ unverified|length }})</h2>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
+      <th style="padding:0.4rem;">Title</th><th>Linked to</th><th>Collected</th><th>Collected by</th>
+    </tr></thead>
+    <tbody>
+      {% for e in unverified %}
+        <tr style="border-bottom:1px solid #eee;background:#f9fafb;">
+          <td style="padding:0.4rem;"><a href="{% url 'evidence_detail' e.pk %}">{{ e.title }}</a></td>
+          <td>{{ e.target_type_label }}: {{ e.target_display|truncatechars:40 }}</td>
+          <td>{{ e.collected_at|date:"Y-m-d" }}</td>
+          <td>{{ e.collected_by.full_name|default:e.collected_by.email|default:"-" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
+{% if not expired and not expiring and not unverified %}
+  <p style="padding:1rem;background:#e7f7e7;border-radius:4px;color:#16a34a;">
+    All evidence is valid and verified.
+  </p>
+{% endif %}
+{% endblock %}

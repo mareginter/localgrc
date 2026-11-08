@@ -16,6 +16,9 @@ def home(request):
         '<a href="/policies/">Policies</a> | '
         '<a href="/audits/">Audits</a> | '
         '<a href="/vendors/">Vendors</a> | '
+        '<a href="/incidents/">Incidents</a> | '
         '<a href="/incidents/dashboard/">Deadlines</a> | '
+        '<a href="/evidence/">Evidence</a> | '
+        '<a href="/evidence/dashboard/">Evidence dashboard</a> | '
         '<a href="/admin/">Admin</a></p>'
     )

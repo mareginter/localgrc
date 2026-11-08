@@ -10,12 +10,30 @@ from .models import AuditLog
 
 
 def _serialize(instance):
+    """Convert any model instance into a JSON-safe dict.
+
+    Handles: None, str, int, float, bool, UUID, datetime, date, Decimal,
+    FieldFile (converted to its name), and any other value (converted
+    to str() as a last resort).
+    """
+    from decimal import Decimal
+
+    def _safe(v):
+        if v is None:
+            return None
+        if isinstance(v, (str, int, float, bool)):
+            return v
+        if isinstance(v, (uuid.UUID, datetime.datetime, datetime.date, Decimal)):
+            return str(v)
+        try:
+            return str(v)
+        except Exception:
+            return repr(v)
+
     data = {}
     for field in instance._meta.fields:
         value = getattr(instance, field.attname, None)
-        if isinstance(value, (uuid.UUID, datetime.datetime, datetime.date)):
-            value = str(value)
-        data[field.name] = value
+        data[field.name] = _safe(value)
     return data
 
 

@@ -1,0 +1,48 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<p><a href="{% url 'evidence_list' %}">&lt;- Back to evidence</a></p>
+<h1>{{ evidence.title }}</h1>
+<p>
+  <strong>Linked to:</strong> {{ evidence.target_type_label }}: {{ evidence.target_display }} |
+  <strong>Source:</strong> {{ evidence.get_source_display }} |
+  <a href="{% url 'evidence_update' evidence.pk %}">Edit</a>
+</p>
+<p>
+  <strong>Valid:</strong>
+  {% if evidence.valid_from %}{{ evidence.valid_from|date:"Y-m-d" }}{% else %}-{% endif %}
+  to
+  {% if evidence.valid_until %}{{ evidence.valid_until|date:"Y-m-d" }}{% else %}-{% endif %}
+  |
+  <strong>Status:</strong>
+  {% if evidence.status_label == 'expired' %}<span style="background:#dc2626;color:#fff;padding:0.15rem 0.4rem;border-radius:3px;">Expired</span>
+  {% elif evidence.status_label == 'expiring' %}<span style="background:#f59e0b;color:#000;padding:0.15rem 0.4rem;border-radius:3px;">Expiring in {{ evidence.expires_within_days }} days</span>
+  {% elif evidence.status_label == 'unverified' %}<span style="background:#6b7280;color:#fff;padding:0.15rem 0.4rem;border-radius:3px;">Unverified</span>
+  {% else %}<span style="background:#16a34a;color:#fff;padding:0.15rem 0.4rem;border-radius:3px;">Valid</span>{% endif %}
+</p>
+<p>
+  <strong>Collected:</strong> {{ evidence.collected_at|date:"Y-m-d H:i" }}
+  {% if evidence.collected_by %} by {{ evidence.collected_by.full_name|default:evidence.collected_by.email }}{% endif %}
+</p>
+{% if evidence.description %}<p>{{ evidence.description|linebreaks }}</p>{% endif %}
+
+{% if evidence.attachment %}
+  <p><strong>Attachment:</strong> <a href="{{ evidence.attachment.url }}">{{ evidence.attachment.name }}</a></p>
+{% endif %}
+
+{% if evidence.is_verified %}
+  <div style="margin:1rem 0;padding:0.75rem;background:#e7f7e7;border-radius:4px;">
+    <strong>Verified</strong> by {{ evidence.verified_by.full_name|default:evidence.verified_by.email }}
+    on {{ evidence.verified_at|date:"Y-m-d H:i" }}
+    {% if evidence.verification_notes %}<br><em>{{ evidence.verification_notes }}</em>{% endif %}
+  </div>
+{% else %}
+  <div style="margin:1rem 0;padding:0.75rem;background:#fef3c7;border-radius:4px;">
+    <strong>Not yet verified.</strong>
+    <form method="post" action="{% url 'evidence_verify' evidence.pk %}" style="margin-top:0.5rem;display:flex;gap:0.5rem;">
+      {% csrf_token %}
+      <input type="text" name="notes" placeholder="verification notes (optional)" style="padding:0.3rem;flex:1;">
+      <button type="submit" style="padding:0.3rem 0.8rem;background:#16a34a;color:#fff;border:none;border-radius:3px;cursor:pointer;">Verify</button>
+    </form>
+  </div>
+{% endif %}
+{% endblock %}

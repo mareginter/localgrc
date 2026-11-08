@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone as dj_timezone
 
+from .encoders import SafeJSONEncoder
 from .mixins import BaseModel
 
 
@@ -116,9 +117,9 @@ class AuditLog(models.Model):
     action = models.CharField(max_length=32)
     entity_type = models.CharField(max_length=64)
     entity_id = models.UUIDField()
-    before = models.JSONField(null=True, blank=True)
-    after = models.JSONField(null=True, blank=True)
-    diff = models.JSONField(null=True, blank=True)
+    before = models.JSONField(null=True, blank=True, encoder=SafeJSONEncoder)
+    after = models.JSONField(null=True, blank=True, encoder=SafeJSONEncoder)
+    diff = models.JSONField(null=True, blank=True, encoder=SafeJSONEncoder)
     ip = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
