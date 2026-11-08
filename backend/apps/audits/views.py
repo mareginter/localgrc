@@ -137,9 +137,9 @@ def audit_transition(request, pk):
 
 # --- Findings ---
 @login_required
-def finding_create(request, audit_pk):
+def finding_create(request, pk):
     org = _org(request)
-    audit = get_object_or_404(Audit, pk=audit_pk, organization=org)
+    audit = get_object_or_404(Audit, pk=pk, organization=org)
     form = AuditFindingForm(request.POST)
     if form.is_valid():
         f = form.save(commit=False)
@@ -208,9 +208,9 @@ def finding_transition(request, pk):
 
 # --- Corrective Actions ---
 @login_required
-def action_create(request, finding_pk):
+def action_create(request, pk):
     org = _org(request)
-    finding = get_object_or_404(AuditFinding, pk=finding_pk, audit__organization=org)
+    finding = get_object_or_404(AuditFinding, pk=pk, audit__organization=org)
     form = CorrectiveActionForm(request.POST)
     if form.is_valid():
         ca = form.save(commit=False)
