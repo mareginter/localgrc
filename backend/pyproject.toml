@@ -8,6 +8,7 @@ dependencies = [
     "dj-database-url>=2.1",
     "gunicorn>=21",
     "whitenoise>=6",
+    "ollama>=0.4",
 ]
 
 [project.optional-dependencies]

@@ -6,35 +6,60 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-localgrc}
       POSTGRES_USER: ${POSTGRES_USER:-localgrc}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-    volumes: [pgdata:/var/lib/postgresql/data]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-localgrc} -d ${POSTGRES_DB:-localgrc}"]
       interval: 10s
+      timeout: 5s
       retries: 5
 
   app:
-    build: { context: ./backend }
+    build:
+      context: ./backend
     restart: unless-stopped
     depends_on:
-      db: { condition: service_healthy }
+      db:
+        condition: service_healthy
     environment:
       DJANGO_SETTINGS_MODULE: localgrc.settings
       DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?set DJANGO_SECRET_KEY}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?set DJANGO_SECRET_KEY in .env}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
       DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:8080}
       DATABASE_URL: postgres://${POSTGRES_USER:-localgrc}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-localgrc}
+      POSTGRES_DB: ${POSTGRES_DB:-localgrc}
+      POSTGRES_USER: ${POSTGRES_USER:-localgrc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       LOCALGRC_ADMIN_EMAIL: ${LOCALGRC_ADMIN_EMAIL:-admin@local}
       LOCALGRC_ADMIN_PASSWORD: ${LOCALGRC_ADMIN_PASSWORD:-admin}
       LOCALGRC_ADMIN_ORG_NAME: ${LOCALGRC_ADMIN_ORG_NAME:-Default Organization}
-    volumes: [uploads:/data/uploads]
-    expose: ["8000"]
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:1b}
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-nomic-embed-text}
+      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-300}
+    volumes:
+      - uploads:/data/uploads
+    expose:
+      - "8000"
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    environment:
+      OLLAMA_KEEP_ALIVE: 10m
+    volumes:
+      - ollama_models:/root/.ollama
+    expose:
+      - "11434"
 
   web:
     image: nginx:1.27-alpine
     restart: unless-stopped
-    depends_on: [app]
-    ports: ["${HTTP_PORT:-8080}:80"]
+    depends_on:
+      - app
+    ports:
+      - "${HTTP_PORT:-8080}:80"
     volumes:
       - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - uploads:/data/uploads:ro
@@ -42,3 +67,4 @@ services:
 volumes:
   pgdata:
   uploads:
+  ollama_models:

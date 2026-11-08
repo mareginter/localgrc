@@ -27,6 +27,8 @@ INSTALLED_APPS = [
     "apps.vendors",
     "apps.incidents",
     "apps.evidence",
+    "apps.assistant",
+
 ]
 
 MIDDLEWARE = [
@@ -108,3 +110,9 @@ EMAIL_BACKEND = os.environ.get(
     "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
 )
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "localgrc@local")
+
+# --- Local AI (Ollama) ---
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
+OLLAMA_EMBED_MODEL = os.environ.get("OLLAMA_EMBED_MODEL", "nomic-embed-text")
+OLLAMA_TIMEOUT = int(os.environ.get("OLLAMA_TIMEOUT", "120"))
