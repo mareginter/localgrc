@@ -7,5 +7,6 @@ urlpatterns = [
     path("risks/", include("apps.risks.urls")),
     path("frameworks/", include("apps.frameworks.urls")),
     path("controls/", include("apps.controls.urls")),
+    path("policies/", include("apps.policies.urls")),
     path("", include("django.contrib.auth.urls")),
 ]

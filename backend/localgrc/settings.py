@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "apps.risks",
     "apps.frameworks",
     "apps.controls",
+    "apps.policies",
 ]
 
 MIDDLEWARE = [

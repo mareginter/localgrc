@@ -13,5 +13,6 @@ def home(request):
         '<a href="/frameworks/">Frameworks</a> | '
         '<a href="/controls/">Controls</a> | '
         '<a href="/controls/coverage/">Coverage</a> | '
+        '<a href="/policies/">Policies</a> | '
         '<a href="/admin/">Admin</a></p>'
     )
