@@ -1,69 +1,75 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<h1>Evidence dashboard</h1>
-<p><a href="{% url 'evidence_list' %}">&lt;- Back to evidence</a></p>
-<p style="color:#555;">Total: {{ total }} evidences</p>
+<div class="page-header">
+  <div>
+    <h1>Evidence dashboard</h1>
+    <p class="page-subtitle">Monitoring of {{ total }} evidence items across the organization.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'evidence_list' %}" class="btn btn-neutral">← Back to list</a>
+  </div>
+</div>
 
-{% if expired %}
-  <h2 style="color:#dc2626;margin-top:1.5rem;">Expired ({{ expired|length }})</h2>
-  <table>
-    <thead><tr>
-      <th>Title</th><th>Linked to</th><th>Expired on</th><th>Days overdue</th>
-    </tr></thead>
-    <tbody>
+<div class="grid-3" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1.25rem;">
+  
+  <!-- Expired -->
+  <div class="card" style="border-top:4px solid var(--c-danger);">
+    <h2 style="color:var(--c-danger);margin-top:0;display:flex;justify-content:space-between;">
+      Expired <span>{{ expired|length }}</span>
+    </h2>
+    {% if expired %}
       {% for e in expired %}
-        <tr style="border-bottom:1px solid #eee;background:#fee;">
-          <td><a href="{% url 'evidence_detail' e.pk %}">{{ e.title }}</a></td>
-          <td>{{ e.target_type_label }}: {{ e.target_display|truncatechars:40 }}</td>
-          <td>{{ e.valid_until }}</td>
-          <td><strong style="color:#dc2626;">{{ e.valid_until|timesince }}</strong></td>
-        </tr>
+        <div class="list-row" style="border-bottom:1px solid #f3f4f6;padding:0.5rem 0;">
+          <div>
+            <a href="{% url 'evidence_detail' e.pk %}" style="font-weight:600;">{{ e.title|truncatechars:25 }}</a>
+            <div class="muted" style="font-size:0.75rem;">{{ e.target_type_label }}: {{ e.target_display|truncatechars:20 }}</div>
+          </div>
+          <div class="badge badge-danger" style="font-size:0.7rem;">{{ e.valid_until|timesince }} ago</div>
+        </div>
       {% endfor %}
-    </tbody>
-  </table>
-{% endif %}
+    {% else %}
+      <div class="empty" style="padding:1rem;">No expired evidence.</div>
+    {% endif %}
+  </div>
 
-{% if expiring %}
-  <h2 style="color:#f59e0b;margin-top:1.5rem;">Expiring in next 30 days ({{ expiring|length }})</h2>
-  <table>
-    <thead><tr>
-      <th>Title</th><th>Linked to</th><th>Valid until</th><th>Days left</th>
-    </tr></thead>
-    <tbody>
+  <!-- Expiring -->
+  <div class="card" style="border-top:4px solid var(--c-warning);">
+    <h2 style="color:var(--c-warning);margin-top:0;display:flex;justify-content:space-between;">
+      Expiring (30d) <span>{{ expiring|length }}</span>
+    </h2>
+    {% if expiring %}
       {% for e in expiring %}
-        <tr style="border-bottom:1px solid #eee;background:#fef3c7;">
-          <td><a href="{% url 'evidence_detail' e.pk %}">{{ e.title }}</a></td>
-          <td>{{ e.target_type_label }}: {{ e.target_display|truncatechars:40 }}</td>
-          <td>{{ e.valid_until }}</td>
-          <td><strong>{{ e.expires_within_days }}</strong></td>
-        </tr>
+        <div class="list-row" style="border-bottom:1px solid #f3f4f6;padding:0.5rem 0;">
+          <div>
+            <a href="{% url 'evidence_detail' e.pk %}" style="font-weight:600;">{{ e.title|truncatechars:25 }}</a>
+            <div class="muted" style="font-size:0.75rem;">{{ e.target_type_label }}: {{ e.target_display|truncatechars:20 }}</div>
+          </div>
+          <div class="badge badge-warning" style="font-size:0.7rem;">in {{ e.expires_within_days }}d</div>
+        </div>
       {% endfor %}
-    </tbody>
-  </table>
-{% endif %}
+    {% else %}
+      <div class="empty" style="padding:1rem;">No evidence expiring soon.</div>
+    {% endif %}
+  </div>
 
-{% if unverified %}
-  <h2 style="margin-top:1.5rem;">Unverified ({{ unverified|length }})</h2>
-  <table>
-    <thead><tr>
-      <th>Title</th><th>Linked to</th><th>Collected</th><th>Collected by</th>
-    </tr></thead>
-    <tbody>
+  <!-- Unverified -->
+  <div class="card" style="border-top:4px solid #6b7280;">
+    <h2 style="color:#6b7280;margin-top:0;display:flex;justify-content:space-between;">
+      Unverified <span>{{ unverified|length }}</span>
+    </h2>
+    {% if unverified %}
       {% for e in unverified %}
-        <tr style="border-bottom:1px solid #eee;background:#f9fafb;">
-          <td><a href="{% url 'evidence_detail' e.pk %}">{{ e.title }}</a></td>
-          <td>{{ e.target_type_label }}: {{ e.target_display|truncatechars:40 }}</td>
-          <td>{{ e.collected_at|date:"Y-m-d" }}</td>
-          <td>{{ e.collected_by.full_name|default:e.collected_by.email|default:"-" }}</td>
-        </tr>
+        <div class="list-row" style="border-bottom:1px solid #f3f4f6;padding:0.5rem 0;">
+          <div>
+            <a href="{% url 'evidence_detail' e.pk %}" style="font-weight:600;">{{ e.title|truncatechars:25 }}</a>
+            <div class="muted" style="font-size:0.75rem;">Collected: {{ e.collected_at|date:"Y-m-d" }}</div>
+          </div>
+        </div>
       {% endfor %}
-    </tbody>
-  </table>
-{% endif %}
+    {% else %}
+      <div class="empty" style="padding:1rem;">All evidence is verified.</div>
+    {% endif %}
+  </div>
 
-{% if not expired and not expiring and not unverified %}
-  <p style="padding:1rem;background:#e7f7e7;border-radius:4px;color:#16a34a;">
-    All evidence is valid and verified.
-  </p>
-{% endif %}
+</div>
 {% endblock %}

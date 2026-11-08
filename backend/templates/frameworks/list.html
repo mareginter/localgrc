@@ -1,33 +1,39 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<h1>Frameworks</h1>
-<p style="color:#555;">Compliance frameworks available in this organization.</p>
+<div class="page-header">
+  <div>
+    <h1>Frameworks</h1>
+    <p class="page-subtitle">Compliance frameworks available in this organization.</p>
+  </div>
+</div>
 
-{% if frameworks %}
-  <table>
-    <thead><tr>
-      <th>Name</th><th>Code</th><th>Category</th>
-      <th>Versions</th><th>Requirements</th>
-    </tr></thead>
-    <tbody>
-      {% for fw in frameworks %}
-        <tr>
-          <td><a href="{% url 'framework_detail' fw.pk %}">{{ fw.name }}</a></td>
-          <td>{{ fw.code }}</td>
-          <td>{{ fw.category|default:"-" }}</td>
-          <td>
-            {% for v in fw.versions.all %}
-              {{ v.version }}{% if v.is_active %} (active){% endif %}{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-          </td>
-          <td>{{ fw.versions.all.0.requirements.count|default:"0" }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <p style="padding:1rem;background:#fef3c7;border-radius:4px;">
-    No frameworks found. Run <code>python manage.py seed_frameworks</code> to load ISO 27001 and NIST CSF.
-  </p>
-{% endif %}
+<div class="card" style="padding:0;overflow:hidden;">
+  {% if frameworks %}
+    <table>
+      <thead><tr>
+        <th>Name</th><th>Code</th><th>Category</th>
+        <th>Versions</th><th class="text-right">Requirements</th>
+      </tr></thead>
+      <tbody>
+        {% for fw in frameworks %}
+          <tr>
+            <td><a href="{% url 'framework_detail' fw.pk %}" style="font-weight:600;">{{ fw.name }}</a></td>
+            <td><span class="badge badge-neutral">{{ fw.code }}</span></td>
+            <td>{{ fw.category|default:"-" }}</td>
+            <td>
+              {% for v in fw.versions.all %}
+                {{ v.version }}{% if v.is_active %} <span class="badge badge-success">Active</span>{% endif %}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </td>
+            <td class="text-right"><strong>{{ fw.versions.all.0.requirements.count|default:"0" }}</strong></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty" style="margin:1rem;">
+      No frameworks found. Run <code>python manage.py seed_frameworks</code> to load ISO 27001 and NIST CSF.
+    </div>
+  {% endif %}
+</div>
 {% endblock %}

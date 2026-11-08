@@ -1,74 +1,111 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<p><a href="{% url 'risk_list' %}"> Back to risks</a></p>
-<h1>{{ risk.code }}  {{ risk.title }}</h1>
-<p>
-  <strong>Category:</strong> {{ risk.get_category_display }} |
-  <strong>Status:</strong> {{ risk.get_status_display }} |
-  <strong>Level:</strong> {{ risk.risk_level }} |
-  <a href="{% url 'risk_update' risk.pk %}">Edit</a>
-</p>
-<p><strong>Owner:</strong> {{ risk.owner.full_name|default:"" }}
-  {% if risk.department %} | <strong>Department:</strong> {{ risk.department }}{% endif %}
-</p>
-{% if risk.description %}<p>{{ risk.description|linebreaks }}</p>{% endif %}
+<div class="page-header">
+  <div>
+    <h1 style="display:flex;align-items:center;gap:0.75rem;">
+      {{ risk.code }} - {{ risk.title }}
+      {% if risk.risk_level == 'critical' %}<span class="badge badge-critical" style="font-size:0.9rem;">Critical</span>
+      {% elif risk.risk_level == 'high' %}<span class="badge badge-high" style="font-size:0.9rem;">High</span>
+      {% endif %}
+    </h1>
+    <p class="page-subtitle">
+      <strong>Category:</strong> {{ risk.get_category_display }} | 
+      <strong>Status:</strong> {{ risk.get_status_display }}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'risk_list' %}" class="btn btn-neutral">← Back to list</a>
+    <a href="{% url 'risk_update' risk.pk %}" class="btn btn-primary">Edit risk</a>
+  </div>
+</div>
 
-<h2 style="margin-top:2rem;">Assessments</h2>
-<table>
-  <thead><tr>
-    <th>Type</th><th>Likelihood</th><th>Impact</th><th>Score</th><th>Current</th><th>By</th><th>At</th>
-  </tr></thead>
-  <tbody>
-    {% for a in risk.assessments.all %}
-      <tr>
-        <td>{{ a.get_type_display }}</td>
-        <td>{{ a.likelihood }}</td><td>{{ a.impact }}</td>
-        <td><strong>{{ a.score }}</strong></td>
-        <td>{% if a.is_current %}{% endif %}</td>
-        <td>{{ a.assessed_by.full_name|default:"" }}</td>
-        <td>{{ a.assessed_at|date:"Y-m-d" }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="7" style="padding:0.6rem;color:#666;">No assessments yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="card mb-3">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;">
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">Owner</div>
+      <div style="font-weight:500;margin-top:0.25rem;">{{ risk.owner.full_name|default:"-" }}</div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">Department</div>
+      <div style="font-weight:500;margin-top:0.25rem;">{{ risk.department|default:"-" }}</div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">Risk Level</div>
+      <div style="font-weight:500;margin-top:0.25rem;">
+        {% if risk.risk_level == 'critical' %}<span class="badge badge-critical">Critical</span>
+        {% elif risk.risk_level == 'high' %}<span class="badge badge-high">High</span>
+        {% elif risk.risk_level == 'medium' %}<span class="badge badge-medium">Medium</span>
+        {% elif risk.risk_level == 'low' %}<span class="badge badge-low">Low</span>
+        {% else %}<span class="badge badge-neutral">{{ risk.risk_level|default:"-" }}</span>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% if risk.description %}
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--c-border);">
+      <strong>Description:</strong><br>{{ risk.description|linebreaks }}
+    </div>
+  {% endif %}
+</div>
 
-<details style="margin:1rem 0;">
-  <summary style="cursor:pointer;">+ Add assessment</summary>
-  <form method="post" action="{% url 'assessment_create' risk.pk %}" style="margin-top:0.5rem;">
-    {% csrf_token %}
-    {{ assessment_form.as_p }}
-    <button type="submit" class="btn btn-primary">Save</button>
-  </form>
-</details>
+<div class="grid-2" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.25rem;">
+  
+  <!-- Assessments -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:1.15rem 1.25rem;"><h2 style="margin:0;">Assessments</h2></div>
+    <table>
+      <thead><tr><th>Type</th><th>L</th><th>I</th><th>Score</th><th>By</th></tr></thead>
+      <tbody>
+        {% for a in risk.assessments.all %}
+          <tr>
+            <td>{{ a.get_type_display }}</td>
+            <td>{{ a.likelihood }}</td>
+            <td>{{ a.impact }}</td>
+            <td><strong>{{ a.score }}</strong> {% if a.is_current %}<span class="badge badge-success">Current</span>{% endif %}</td>
+            <td class="muted">{{ a.assessed_by.full_name|default:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5"><div class="empty">No assessments yet.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--c-border);background:#f9fafb;">
+      <details>
+        <summary style="cursor:pointer;color:var(--c-primary);font-weight:500;font-size:0.9rem;">+ Add assessment</summary>
+        <form method="post" action="{% url 'assessment_create' risk.pk %}" style="margin-top:0.75rem;">
+          {% csrf_token %}{{ assessment_form.as_p }}
+          <button type="submit" class="btn btn-primary btn-sm">Save assessment</button>
+        </form>
+      </details>
+    </div>
+  </div>
 
-<h2 style="margin-top:2rem;">Treatments</h2>
-<table>
-  <thead><tr>
-    <th>Strategy</th><th>Description</th><th>Responsible</th><th>Due</th><th>Status</th>
-  </tr></thead>
-  <tbody>
-    {% for t in risk.treatments.all %}
-      <tr>
-        <td>{{ t.get_strategy_display }}</td>
-        <td>{{ t.description|truncatechars:80 }}</td>
-        <td>{{ t.responsible.full_name|default:"" }}</td>
-        <td>{{ t.due_date|default:"" }}</td>
-        <td>{{ t.get_status_display }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="5" style="padding:0.6rem;color:#666;">No treatments yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+  <!-- Treatments -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:1.15rem 1.25rem;"><h2 style="margin:0;">Treatments</h2></div>
+    <table>
+      <thead><tr><th>Strategy</th><th>Description</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for t in risk.treatments.all %}
+          <tr>
+            <td><span class="badge badge-neutral">{{ t.get_strategy_display }}</span></td>
+            <td>{{ t.description|truncatechars:40 }}</td>
+            <td>{{ t.get_status_display }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3"><div class="empty">No treatments yet.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--c-border);background:#f9fafb;">
+      <details>
+        <summary style="cursor:pointer;color:var(--c-primary);font-weight:500;font-size:0.9rem;">+ Add treatment</summary>
+        <form method="post" action="{% url 'treatment_create' risk.pk %}" style="margin-top:0.75rem;">
+          {% csrf_token %}{{ treatment_form.as_p }}
+          <button type="submit" class="btn btn-primary btn-sm">Save treatment</button>
+        </form>
+      </details>
+    </div>
+  </div>
 
-<details style="margin:1rem 0;">
-  <summary style="cursor:pointer;">+ Add treatment</summary>
-  <form method="post" action="{% url 'treatment_create' risk.pk %}" style="margin-top:0.5rem;">
-    {% csrf_token %}
-    {{ treatment_form.as_p }}
-    <button type="submit" class="btn btn-primary">Save</button>
-  </form>
-</details>
+</div>
 {% endblock %}

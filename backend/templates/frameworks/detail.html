@@ -1,43 +1,53 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<p><a href="{% url 'framework_list' %}">&lt;- Back to frameworks</a></p>
-<h1>{{ framework.name }}{% if version %} {{ version.version }}{% endif %}</h1>
-<p>
-  <strong>Code:</strong> {{ framework.code }} |
-  <strong>Category:</strong> {{ framework.category|default:"-" }}
-  {% if framework.source_url %} | <a href="{{ framework.source_url }}" target="_blank" rel="noopener">Official source</a>{% endif %}
-</p>
+<div class="page-header">
+  <div>
+    <h1>{{ framework.name }}{% if version %} {{ version.version }}{% endif %}</h1>
+    <p class="page-subtitle">
+      <strong>Code:</strong> {{ framework.code }} | 
+      <strong>Category:</strong> {{ framework.category|default:"-" }}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'framework_list' %}" class="btn btn-neutral">← Back to list</a>
+    {% if framework.source_url %}
+      <a href="{{ framework.source_url }}" target="_blank" rel="noopener" class="btn btn-neutral">Official source ↗</a>
+    {% endif %}
+  </div>
+</div>
 
-{% if requirements %}
-  <h2 style="margin-top:2rem;">Requirements ({{ requirements|length }} top-level)</h2>
-  {% regroup requirements by category as groups %}
-  {% for group in groups %}
-    <h3 style="margin-top:1.5rem;border-bottom:1px solid #ddd;padding-bottom:0.25rem;">
-      {{ group.grouper|default:"Uncategorized" }}
-    </h3>
-    <table>
-      <tbody>
-        {% for req in group.list %}
-          <tr>
-            <td style="padding:0.4rem;width:80px;"><strong>{{ req.code }}</strong></td>
-            <td>
-              <a href="{% url 'requirement_detail' req.pk %}">{{ req.title }}</a>
-              {% if req.children.all %}
-                <div style="margin-top:0.3rem;padding-left:1rem;font-size:0.9rem;color:#555;">
-                  {% for child in req.children.all %}
-                    <div>{{ child.code }} -- {{ child.title }}</div>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% endfor %}
-{% else %}
-  <p style="padding:1rem;background:#fef3c7;border-radius:4px;">
-    No requirements yet. Run <code>python manage.py seed_frameworks</code> to load them.
-  </p>
-{% endif %}
+<div class="card">
+  {% if requirements %}
+    <h2 style="margin-top:0;">Requirements ({{ requirements|length }} top-level)</h2>
+    {% regroup requirements by category as groups %}
+    {% for group in groups %}
+      <h3 style="margin-top:1.5rem;border-bottom:1px solid var(--c-border);padding-bottom:0.25rem;">
+        {{ group.grouper|default:"Uncategorized" }}
+      </h3>
+      <table style="margin-top:0.5rem;">
+        <tbody>
+          {% for req in group.list %}
+            <tr>
+              <td style="width:80px;"><strong>{{ req.code }}</strong></td>
+              <td>
+                <a href="{% url 'requirement_detail' req.pk %}" style="font-weight:500;">{{ req.title }}</a>
+                {% if req.children.all %}
+                  <div style="margin-top:0.3rem;padding-left:1rem;font-size:0.85rem;color:var(--c-text-muted);">
+                    {% for child in req.children.all %}
+                      <div style="margin-bottom:0.2rem;">{{ child.code }} — {{ child.title }}</div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endfor %}
+  {% else %}
+    <div class="empty">
+      No requirements yet. Run <code>python manage.py seed_frameworks</code> to load them.
+    </div>
+  {% endif %}
+</div>
 {% endblock %}

@@ -1,114 +1,151 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<p><a href="{% url 'vendor_list' %}">&lt;- Back to vendors</a></p>
-<h1>{{ vendor.name }}</h1>
-<p>
-  <strong>Category:</strong> {{ vendor.category|default:"-" }} |
-  <strong>Criticality:</strong> {{ vendor.get_criticality_display }} |
-  <strong>Data role:</strong> {{ vendor.get_data_processing_role_display }} |
-  <strong>Status:</strong> {{ vendor.get_status_display }} |
-  <a href="{% url 'vendor_update' vendor.pk %}">Edit</a>
-</p>
-<p>
-  <strong>DPA:</strong> {% if vendor.dpa_signed %}Signed {{ vendor.dpa_date|date:"Y-m-d" }}{% else %}Not signed{% endif %}
-  {% if vendor.contact_email %} | <strong>Contact:</strong> {{ vendor.contact_name|default:"" }} &lt;{{ vendor.contact_email }}&gt;{% endif %}
-</p>
-{% if vendor.description %}<p>{{ vendor.description|linebreaks }}</p>{% endif %}
+<div class="page-header">
+  <div>
+    <h1 style="display:flex;align-items:center;gap:0.75rem;">
+      {{ vendor.name }}
+      {% if vendor.criticality == 'critical' %}<span class="badge badge-critical" style="font-size:0.9rem;">Critical Vendor</span>{% endif %}
+    </h1>
+    <p class="page-subtitle">
+      <strong>Category:</strong> {{ vendor.category|default:"-" }} | 
+      <strong>Data role:</strong> {{ vendor.get_data_processing_role_display }} |
+      <strong>Status:</strong> {{ vendor.get_status_display }}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'vendor_list' %}" class="btn btn-neutral">← Back to list</a>
+    <a href="{% url 'vendor_update' vendor.pk %}" class="btn btn-primary">Edit vendor</a>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;">
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">DPA Status</div>
+      <div style="font-weight:500;margin-top:0.25rem;">
+        {% if vendor.dpa_signed %}<span class="badge badge-success">Signed</span> {{ vendor.dpa_date|date:"Y-m-d" }}
+        {% else %}<span class="badge badge-danger">Not signed</span>{% endif %}
+      </div>
+    </div>
+    {% if vendor.contact_email %}
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">Contact</div>
+      <div style="font-weight:500;margin-top:0.25rem;">{{ vendor.contact_name|default:"" }} &lt;{{ vendor.contact_email }}&gt;</div>
+    </div>
+    {% endif %}
+  </div>
+  {% if vendor.description %}
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--c-border);">
+      <strong>Description:</strong><br>{{ vendor.description|linebreaks }}
+    </div>
+  {% endif %}
+</div>
 
 {% if transitions %}
-  <div style="margin:1rem 0;padding:0.75rem;background:#eff6ff;border-radius:4px;">
-    <strong>Workflow:</strong>
-    {% for t in transitions %}
-      <form method="post" action="{% url 'vendor_transition' vendor.pk %}" style="display:inline-block;margin:0 0.5rem 0 0;">
-        {% csrf_token %}
-        <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
-        <input type="text" name="comment" placeholder="comment" style="width:160px;">
-        <button type="submit" class="btn btn-primary btn-sm">
-          Move to {{ t.to_state.label }}
-        </button>
-      </form>
-    {% endfor %}
+  <div class="card mb-3" style="background:#f8fafc;border-color:#cbd5e1;">
+    <h3 style="margin-top:0;">Workflow Actions</h3>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+      {% for t in transitions %}
+        <form method="post" action="{% url 'vendor_transition' vendor.pk %}" style="margin:0;display:flex;gap:0.5rem;">
+          {% csrf_token %}
+          <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
+          <input type="text" name="comment" placeholder="Comment" style="width:150px;padding:0.35rem 0.5rem;font-size:0.85rem;">
+          <button type="submit" class="btn btn-primary btn-sm">Move to {{ t.to_state.label }}</button>
+        </form>
+      {% endfor %}
+    </div>
   </div>
 {% endif %}
 
-<h2 style="margin-top:2rem;">Assessments ({{ assessments|length }})</h2>
-<table>
-  <thead><tr>
-    <th>Date</th><th>Score</th><th>Rating</th><th>Next</th><th>By</th>
-  </tr></thead>
-  <tbody>
-    {% for a in assessments %}
-      <tr>
-        <td>{{ a.assessment_date }}</td>
-        <td>{{ a.score|default:"-" }}</td>
-        <td>{{ a.get_risk_rating_display }}</td>
-        <td>{{ a.next_assessment_date|default:"-" }}</td>
-        <td>{{ a.assessed_by.full_name|default:"-" }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="5" style="padding:0.6rem;color:#666;">No assessments yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-<details style="margin:1rem 0;">
-  <summary style="cursor:pointer;">+ Add assessment</summary>
-  <form method="post" action="{% url 'vendor_assessment_create' vendor.pk %}" style="margin-top:0.5rem;">
-    {% csrf_token %}
-    {{ assessment_form.as_p }}
-    <button type="submit" class="btn btn-primary">Save</button>
-  </form>
-</details>
+<div class="grid-2" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.25rem;">
+  
+  <!-- Assessments -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:1.15rem 1.25rem;"><h2 style="margin:0;">Assessments</h2></div>
+    <table>
+      <thead><tr><th>Date</th><th>Score</th><th>Rating</th><th>Next</th></tr></thead>
+      <tbody>
+        {% for a in assessments %}
+          <tr>
+            <td style="font-weight:500;">{{ a.assessment_date }}</td>
+            <td>{{ a.score|default:"-" }}</td>
+            <td><span class="badge badge-neutral">{{ a.get_risk_rating_display }}</span></td>
+            <td class="muted">{{ a.next_assessment_date|default:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4"><div class="empty">No assessments.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--c-border);background:#f9fafb;">
+      <details>
+        <summary style="cursor:pointer;color:var(--c-primary);font-weight:500;font-size:0.9rem;">+ Add assessment</summary>
+        <form method="post" action="{% url 'vendor_assessment_create' vendor.pk %}" style="margin-top:0.75rem;">
+          {% csrf_token %}{{ assessment_form.as_p }}
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </form>
+      </details>
+    </div>
+  </div>
 
-<h2 style="margin-top:2rem;">Risks introduced ({{ risk_links|length }})</h2>
-<table>
-  <thead><tr>
-    <th>Risk</th><th>Title</th><th>Note</th>
-  </tr></thead>
-  <tbody>
-    {% for vl in risk_links %}
-      <tr>
-        <td><a href="{% url 'risk_detail' vl.risk.pk %}">{{ vl.risk.code }}</a></td>
-        <td>{{ vl.risk.title }}</td>
-        <td>{{ vl.note|truncatechars:80|default:"-" }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="3" style="padding:0.6rem;color:#666;">No risks linked yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-<details style="margin:1rem 0;">
-  <summary style="cursor:pointer;">+ Link a risk</summary>
-  <form method="post" action="{% url 'vendor_risk_link_create' vendor.pk %}" style="margin-top:0.5rem;">
-    {% csrf_token %}
-    {{ risk_form.as_p }}
-    <button type="submit" class="btn btn-primary">Save</button>
-  </form>
-</details>
+  <!-- Risks Introduced -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:1.15rem 1.25rem;"><h2 style="margin:0;">Risks introduced</h2></div>
+    <table>
+      <thead><tr><th>Risk</th><th>Title</th></tr></thead>
+      <tbody>
+        {% for vl in risk_links %}
+          <tr>
+            <td><a href="{% url 'risk_detail' vl.risk.pk %}" style="font-weight:600;">{{ vl.risk.code }}</a></td>
+            <td>{{ vl.risk.title }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="2"><div class="empty">No risks linked.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--c-border);background:#f9fafb;">
+      <details>
+        <summary style="cursor:pointer;color:var(--c-primary);font-weight:500;font-size:0.9rem;">+ Link a risk</summary>
+        <form method="post" action="{% url 'vendor_risk_link_create' vendor.pk %}" style="margin-top:0.75rem;">
+          {% csrf_token %}{{ risk_form.as_p }}
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </form>
+      </details>
+    </div>
+  </div>
 
-<h2 style="margin-top:2rem;">Controls provided ({{ control_links|length }})</h2>
-<table>
-  <thead><tr>
-    <th>Control</th><th>Name</th><th>Verified</th><th>Notes</th>
-  </tr></thead>
-  <tbody>
-    {% for cl in control_links %}
-      <tr>
-        <td><a href="{% url 'control_detail' cl.control.pk %}">{{ cl.control.code }}</a></td>
-        <td>{{ cl.control.name }}</td>
-        <td>{% if cl.verified %}<span style="color:#16a34a;">Yes</span> ({{ cl.verified_at|date:"Y-m-d" }}){% else %}<span style="color:#dc2626;">No</span>{% endif %}</td>
-        <td>{{ cl.notes|truncatechars:60|default:"-" }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="4" style="padding:0.6rem;color:#666;">No controls linked yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-<details style="margin:1rem 0;">
-  <summary style="cursor:pointer;">+ Link a control</summary>
-  <form method="post" action="{% url 'vendor_control_link_create' vendor.pk %}" style="margin-top:0.5rem;">
-    {% csrf_token %}
-    {{ control_form.as_p }}
-    <button type="submit" class="btn btn-primary">Save</button>
-  </form>
-</details>
+  <!-- Controls Provided -->
+  <div class="card" style="padding:0;overflow:hidden;grid-column:1/-1;">
+    <div style="padding:1.15rem 1.25rem;"><h2 style="margin:0;">Controls provided</h2></div>
+    <table>
+      <thead><tr><th>Control</th><th>Name</th><th>Verified</th><th>Notes</th></tr></thead>
+      <tbody>
+        {% for cl in control_links %}
+          <tr>
+            <td><a href="{% url 'control_detail' cl.control.pk %}" style="font-weight:600;">{{ cl.control.code }}</a></td>
+            <td>{{ cl.control.name }}</td>
+            <td>
+              {% if cl.verified %}<span class="badge badge-success">Yes</span> <small class="muted">({{ cl.verified_at|date:"Y-m-d" }})</small>
+              {% else %}<span class="badge badge-danger">No</span>{% endif %}
+            </td>
+            <td class="muted">{{ cl.notes|truncatechars:60|default:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4"><div class="empty">No controls linked.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--c-border);background:#f9fafb;">
+      <details>
+        <summary style="cursor:pointer;color:var(--c-primary);font-weight:500;font-size:0.9rem;">+ Link a control</summary>
+        <form method="post" action="{% url 'vendor_control_link_create' vendor.pk %}" style="margin-top:0.75rem;">
+          {% csrf_token %}{{ control_form.as_p }}
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </form>
+      </details>
+    </div>
+  </div>
+
+</div>
 {% endblock %}

@@ -1,52 +1,62 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<h1>Evidence</h1>
-<p>
-  <a href="{% url 'evidence_create' %}" class="btn btn-primary">+ New evidence</a>
-  <a href="{% url 'evidence_dashboard' %}" style="margin-left:0.5rem;">Dashboard</a>
-</p>
-<form method="get" style="margin:1rem 0;display:flex;gap:0.5rem;flex-wrap:wrap;">
-  <input type="text" name="q" value="{{ q }}" placeholder="Search title or description" style="padding:0.4rem;flex:1;min-width:200px;">
-  <select name="status">
+<div class="page-header">
+  <div>
+    <h1>Evidence</h1>
+    <p class="page-subtitle">Proof of control implementation and compliance.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'evidence_dashboard' %}" class="btn btn-neutral">Dashboard</a>
+    <a href="{% url 'evidence_create' %}" class="btn btn-primary">+ New evidence</a>
+  </div>
+</div>
+
+<form method="get" class="card" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;padding:0.75rem 1rem;margin-bottom:1rem;">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search title or description" style="flex:1;min-width:200px;">
+  <select name="status" style="width:auto;min-width:160px;">
     <option value="">Any status</option>
     <option value="valid" {% if status == 'valid' %}selected{% endif %}>Valid & verified</option>
     <option value="unverified" {% if status == 'unverified' %}selected{% endif %}>Unverified</option>
     <option value="expiring" {% if status == 'expiring' %}selected{% endif %}>Expiring (30d)</option>
     <option value="expired" {% if status == 'expired' %}selected{% endif %}>Expired</option>
   </select>
-  <button type="submit" style="padding:0.4rem 0.8rem;">Filter</button>
-  <a href="{% url 'evidence_list' %}" style="padding:0.4rem 0.8rem;">Reset</a>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  <a href="{% url 'evidence_list' %}" class="btn btn-neutral">Reset</a>
 </form>
-<table>
-  <thead><tr>
-    <th>Title</th><th>Linked to</th><th>Source</th>
-    <th>Valid until</th><th>Status</th><th>Verified</th>
-  </tr></thead>
-  <tbody>
-    {% for e in page %}
-      <tr>
-        <td><a href="{% url 'evidence_detail' e.pk %}">{{ e.title }}</a></td>
-        <td>{{ e.target_type_label }}: {{ e.target_display|truncatechars:40 }}</td>
-        <td>{{ e.get_source_display }}</td>
-        <td>{{ e.valid_until|default:"-" }}</td>
-        <td>
-          {% if e.status_label == 'expired' %}<span class="badge badge-danger">Expired</span>
-          {% elif e.status_label == 'expiring' %}<span class="badge badge-warning">Expiring</span>
-          {% elif e.status_label == 'unverified' %}<span class="badge badge-neutral">Unverified</span>
-          {% else %}<span class="badge badge-success">Valid</span>{% endif %}
-        </td>
-        <td>{% if e.verified_at %}{{ e.verified_by.full_name|default:e.verified_by.email }} ({{ e.verified_at|date:"Y-m-d" }}){% else %}-{% endif %}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="6" style="padding:1rem;text-align:center;color:#666;">No evidence yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <table>
+    <thead><tr>
+      <th>Title</th><th>Linked to</th><th>Source</th>
+      <th>Valid until</th><th>Status</th><th>Verified</th>
+    </tr></thead>
+    <tbody>
+      {% for e in page %}
+        <tr>
+          <td><a href="{% url 'evidence_detail' e.pk %}" style="font-weight:600;">{{ e.title }}</a></td>
+          <td>{{ e.target_type_label }}: {{ e.target_display|truncatechars:40 }}</td>
+          <td>{{ e.get_source_display }}</td>
+          <td>{{ e.valid_until|default:"-" }}</td>
+          <td>
+            {% if e.status_label == 'expired' %}<span class="badge badge-danger">Expired</span>
+            {% elif e.status_label == 'expiring' %}<span class="badge badge-warning">Expiring</span>
+            {% elif e.status_label == 'unverified' %}<span class="badge badge-neutral">Unverified</span>
+            {% else %}<span class="badge badge-success">Valid</span>{% endif %}
+          </td>
+          <td>{% if e.verified_at %}{{ e.verified_by.full_name|default:e.verified_by.email }} <small class="muted">({{ e.verified_at|date:"Y-m-d" }})</small>{% else %}-{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6"><div class="empty">No evidence yet.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
 {% if page.has_other_pages %}
-  <p style="margin-top:1rem;">
-    {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">prev</a>{% endif %}
-    Page {{ page.number }} of {{ page.paginator.num_pages }}
-    {% if page.has_next %}<a href="?page={{ page.next_page_number }}">next</a>{% endif %}
-  </p>
+  <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center;">
+    {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}" class="btn btn-neutral btn-sm">← Previous</a>{% else %}<span></span>{% endif %}
+    <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?page={{ page.next_page_number }}" class="btn btn-neutral btn-sm">Next →</a>{% else %}<span></span>{% endif %}
+  </div>
 {% endif %}
 {% endblock %}

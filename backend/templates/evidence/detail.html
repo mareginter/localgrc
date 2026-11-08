@@ -1,47 +1,66 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<p><a href="{% url 'evidence_list' %}">&lt;- Back to evidence</a></p>
-<h1>{{ evidence.title }}</h1>
-<p>
-  <strong>Linked to:</strong> {{ evidence.target_type_label }}: {{ evidence.target_display }} |
-  <strong>Source:</strong> {{ evidence.get_source_display }} |
-  <a href="{% url 'evidence_update' evidence.pk %}">Edit</a>
-</p>
-<p>
-  <strong>Valid:</strong>
-  {% if evidence.valid_from %}{{ evidence.valid_from|date:"Y-m-d" }}{% else %}-{% endif %}
-  to
-  {% if evidence.valid_until %}{{ evidence.valid_until|date:"Y-m-d" }}{% else %}-{% endif %}
-  |
-  <strong>Status:</strong>
-  {% if evidence.status_label == 'expired' %}<span class="badge badge-danger">Expired</span>
-  {% elif evidence.status_label == 'expiring' %}<span class="badge badge-warning">Expiring in {{ evidence.expires_within_days }} days</span>
-  {% elif evidence.status_label == 'unverified' %}<span class="badge badge-neutral">Unverified</span>
-  {% else %}<span class="badge badge-success">Valid</span>{% endif %}
-</p>
-<p>
-  <strong>Collected:</strong> {{ evidence.collected_at|date:"Y-m-d H:i" }}
-  {% if evidence.collected_by %} by {{ evidence.collected_by.full_name|default:evidence.collected_by.email }}{% endif %}
-</p>
-{% if evidence.description %}<p>{{ evidence.description|linebreaks }}</p>{% endif %}
+<div class="page-header">
+  <div>
+    <h1>{{ evidence.title }}</h1>
+    <p class="page-subtitle">
+      <strong>Linked to:</strong> {{ evidence.target_type_label }}: {{ evidence.target_display }} | 
+      <strong>Source:</strong> {{ evidence.get_source_display }}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'evidence_list' %}" class="btn btn-neutral">← Back to list</a>
+    <a href="{% url 'evidence_update' evidence.pk %}" class="btn btn-primary">Edit evidence</a>
+  </div>
+</div>
 
-{% if evidence.attachment %}
-  <p><strong>Attachment:</strong> <a href="{{ evidence.attachment.url }}">{{ evidence.attachment.name }}</a></p>
-{% endif %}
+<div class="card mb-3">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;">
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">Validity</div>
+      <div style="font-weight:500;margin-top:0.25rem;">
+        {{ evidence.valid_from|date:"Y-m-d"|default:"-" }} to {{ evidence.valid_until|date:"Y-m-d"|default:"-" }}
+      </div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">Status</div>
+      <div style="font-weight:500;margin-top:0.25rem;">
+        {% if evidence.status_label == 'expired' %}<span class="badge badge-danger">Expired</span>
+        {% elif evidence.status_label == 'expiring' %}<span class="badge badge-warning">Expiring in {{ evidence.expires_within_days }} days</span>
+        {% elif evidence.status_label == 'unverified' %}<span class="badge badge-neutral">Unverified</span>
+        {% else %}<span class="badge badge-success">Valid</span>{% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">Collected</div>
+      <div style="font-weight:500;margin-top:0.25rem;">{{ evidence.collected_at|date:"Y-m-d H:i" }} by {{ evidence.collected_by.full_name|default:evidence.collected_by.email|default:"-" }}</div>
+    </div>
+  </div>
+  {% if evidence.description %}
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--c-border);">
+      {{ evidence.description|linebreaks }}
+    </div>
+  {% endif %}
+  {% if evidence.attachment %}
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--c-border);">
+      <strong>Attachment:</strong> <a href="{{ evidence.attachment.url }}" class="btn btn-neutral btn-sm" style="margin-left:0.5rem;">Download file</a>
+    </div>
+  {% endif %}
+</div>
 
 {% if evidence.is_verified %}
-  <div style="margin:1rem 0;padding:0.75rem;background:#e7f7e7;border-radius:4px;">
-    <strong>Verified</strong> by {{ evidence.verified_by.full_name|default:evidence.verified_by.email }}
-    on {{ evidence.verified_at|date:"Y-m-d H:i" }}
-    {% if evidence.verification_notes %}<br><em>{{ evidence.verification_notes }}</em>{% endif %}
+  <div class="card" style="border-left:4px solid var(--c-success);">
+    <h3 style="margin-top:0;color:var(--c-success);">Verified</h3>
+    <p>Verified by <strong>{{ evidence.verified_by.full_name|default:evidence.verified_by.email }}</strong> on {{ evidence.verified_at|date:"Y-m-d H:i" }}.</p>
+    {% if evidence.verification_notes %}<p class="muted" style="font-style:italic;">"{{ evidence.verification_notes }}"</p>{% endif %}
   </div>
 {% else %}
-  <div style="margin:1rem 0;padding:0.75rem;background:#fef3c7;border-radius:4px;">
-    <strong>Not yet verified.</strong>
+  <div class="card" style="border-left:4px solid var(--c-warning);background:#fffbeb;">
+    <h3 style="margin-top:0;color:var(--c-warning);">Not yet verified</h3>
     <form method="post" action="{% url 'evidence_verify' evidence.pk %}" style="margin-top:0.5rem;display:flex;gap:0.5rem;">
       {% csrf_token %}
-      <input type="text" name="notes" placeholder="verification notes (optional)" style="padding:0.3rem;flex:1;">
-      <button type="submit" class="btn btn-success btn-sm">Verify</button>
+      <input type="text" name="notes" placeholder="Verification notes (optional)" style="flex:1;">
+      <button type="submit" class="btn btn-success">Verify evidence</button>
     </form>
   </div>
 {% endif %}

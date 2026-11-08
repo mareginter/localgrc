@@ -1,26 +1,47 @@
 {% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<p>
-  <a href="{% url 'framework_detail' requirement.framework_version.framework.pk %}">
-    &lt;- Back to {{ requirement.framework_version.framework.name }}
-  </a>
-</p>
-<h1>{{ requirement.code }} -- {{ requirement.title }}</h1>
-<p>
-  <strong>Framework:</strong> {{ requirement.framework_version.framework.name }}
-  {{ requirement.framework_version.version }} |
-  <strong>Category:</strong> {{ requirement.category|default:"-" }}
-  {% if requirement.parent %} | <strong>Parent:</strong> {{ requirement.parent.code }}{% endif %}
-</p>
-{% if requirement.description %}
-  <p>{{ requirement.description|linebreaks }}</p>
-{% endif %}
+<div class="page-header">
+  <div>
+    <h1>{{ requirement.code }} - {{ requirement.title }}</h1>
+    <p class="page-subtitle">
+      <strong>Framework:</strong> {{ requirement.framework_version.framework.name }} {{ requirement.framework_version.version }} | 
+      <strong>Category:</strong> {{ requirement.category|default:"-" }}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'framework_detail' requirement.framework_version.framework.pk %}" class="btn btn-neutral">← Back to {{ requirement.framework_version.framework.name }}</a>
+  </div>
+</div>
+
+<div class="card mb-3">
+  {% if requirement.parent %}
+    <div style="margin-bottom:1rem;">
+      <strong>Parent Requirement:</strong> <a href="{% url 'requirement_detail' requirement.parent.pk %}">{{ requirement.parent.code }}</a>
+    </div>
+  {% endif %}
+  
+  {% if requirement.description %}
+    {{ requirement.description|linebreaks }}
+  {% else %}
+    <p class="muted" style="font-style:italic;">No description provided.</p>
+  {% endif %}
+</div>
+
 {% if requirement.children.all %}
-  <h2 style="margin-top:2rem;">Sub-requirements</h2>
-  <ul>
-    {% for child in requirement.children.all %}
-      <li><a href="{% url 'requirement_detail' child.pk %}">{{ child.code }} -- {{ child.title }}</a></li>
-    {% endfor %}
-  </ul>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:1.15rem 1.25rem;">
+      <h2 style="margin:0;">Sub-requirements</h2>
+    </div>
+    <table>
+      <tbody>
+        {% for child in requirement.children.all %}
+          <tr>
+            <td style="width:80px;"><strong>{{ child.code }}</strong></td>
+            <td><a href="{% url 'requirement_detail' child.pk %}" style="font-weight:500;">{{ child.title }}</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% endif %}
 {% endblock %}

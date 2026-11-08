@@ -1,23 +1,38 @@
 ﻿{% extends "risks/base_risks.html" %}
 {% block risks_content %}
-<h1>Assets</h1>
-<p><a href="{% url 'asset_create' %}" class="btn btn-primary">+ New asset</a></p>
-<table>
-  <thead><tr>
-    <th>Name</th><th>Type</th><th>Criticality</th><th>Classification</th><th>Owner</th>
-  </tr></thead>
-  <tbody>
-    {% for a in assets %}
-      <tr>
-        <td>{{ a.name }}</td>
-        <td>{{ a.get_type_display }}</td>
-        <td>{{ a.get_criticality_display }}</td>
-        <td>{{ a.get_classification_display }}</td>
-        <td>{{ a.owner.full_name|default:"" }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="5" style="padding:1rem;text-align:center;color:#666;">No assets yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="page-header">
+  <div>
+    <h1>Assets</h1>
+    <p class="page-subtitle">Inventory of information assets and their classifications.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'asset_create' %}" class="btn btn-primary">+ New asset</a>
+  </div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <table>
+    <thead><tr>
+      <th>Name</th><th>Type</th><th>Criticality</th><th>Classification</th><th>Owner</th>
+    </tr></thead>
+    <tbody>
+      {% for a in assets %}
+        <tr>
+          <td style="font-weight:600;">{{ a.name }}</td>
+          <td>{{ a.get_type_display }}</td>
+          <td>
+            {% if a.criticality == 'critical' %}<span class="badge badge-critical">Critical</span>
+            {% elif a.criticality == 'high' %}<span class="badge badge-high">High</span>
+            {% elif a.criticality == 'medium' %}<span class="badge badge-medium">Medium</span>
+            {% else %}<span class="badge badge-low">Low</span>{% endif %}
+          </td>
+          <td>{{ a.get_classification_display }}</td>
+          <td>{{ a.owner.full_name|default:"-" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5"><div class="empty">No assets yet.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}
