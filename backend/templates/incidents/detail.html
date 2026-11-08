@@ -1,0 +1,147 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<p><a href="{% url 'incident_list' %}">&lt;- Back to incidents</a></p>
+<h1>{{ incident.code }} - {{ incident.title }}</h1>
+<p>
+  <strong>Category:</strong> {{ incident.get_category_display }} |
+  <strong>Severity:</strong> {{ incident.get_severity_display }} |
+  <strong>Status:</strong> {{ incident.get_status_display }} |
+  <a href="{% url 'incident_update' incident.pk %}">Edit</a>
+</p>
+<p>
+  <strong>Detected:</strong> {{ incident.detected_at|date:"Y-m-d H:i" }} |
+  <strong>Owner:</strong> {{ incident.owner.full_name|default:"-" }} |
+  <strong>Reported by:</strong> {{ incident.reported_by.full_name|default:incident.reported_by.email|default:"-" }}
+</p>
+{% if incident.description %}<p>{{ incident.description|linebreaks }}</p>{% endif %}
+{% if incident.affected_systems %}<p><strong>Affected systems:</strong> {{ incident.affected_systems|linebreaks }}</p>{% endif %}
+
+{% if transitions %}
+  <div style="margin:1rem 0;padding:0.75rem;background:#eff6ff;border-radius:4px;">
+    <strong>Workflow:</strong>
+    {% for t in transitions %}
+      <form method="post" action="{% url 'incident_transition' incident.pk %}" style="display:inline-block;margin:0 0.5rem 0 0;">
+        {% csrf_token %}
+        <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
+        <input type="text" name="comment" placeholder="comment" style="padding:0.3rem;font-size:0.85rem;width:150px;">
+        <button type="submit" style="padding:0.3rem 0.8rem;background:#2563eb;color:#fff;border:none;border-radius:3px;cursor:pointer;">
+          Move to {{ t.to_state.label }}
+        </button>
+      </form>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<h2 style="margin-top:2rem;">Regulatory deadlines ({{ deadlines|length }})</h2>
+<table style="width:100%;border-collapse:collapse;">
+  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
+    <th style="padding:0.4rem;">Regulation</th><th>Deadline</th><th>Status</th><th>Notified at</th><th></th>
+  </tr></thead>
+  <tbody>
+    {% for d in deadlines %}
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:0.4rem;">{{ d.get_regulation_display }}</td>
+        <td>{{ d.deadline_at|date:"Y-m-d H:i" }}</td>
+        <td>
+          {% if d.status_label == 'notified' %}<span style="background:#16a34a;color:#fff;padding:0.15rem 0.4rem;border-radius:3px;font-size:0.85rem;">Notified</span>
+          {% elif d.status_label == 'overdue' %}<span style="background:#dc2626;color:#fff;padding:0.15rem 0.4rem;border-radius:3px;font-size:0.85rem;">OVERDUE</span>
+          {% elif d.status_label == 'urgent' %}<span style="background:#f59e0b;color:#000;padding:0.15rem 0.4rem;border-radius:3px;font-size:0.85rem;">Urgent</span>
+          {% else %}<span style="color:#666;">Pending</span>{% endif %}
+        </td>
+        <td>{% if d.notified_at %}{{ d.notified_at|date:"Y-m-d H:i" }}{% if d.regulator_reference %} ({{ d.regulator_reference }}){% endif %}{% else %}-{% endif %}</td>
+        <td>
+          {% if not d.notified_at %}
+            <form method="post" action="{% url 'deadline_mark_notified' d.pk %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="text" name="regulator_reference" placeholder="ref #" style="padding:0.2rem;font-size:0.8rem;width:100px;">
+              <button type="submit" style="padding:0.2rem 0.5rem;font-size:0.8rem;background:#2563eb;color:#fff;border:none;border-radius:3px;cursor:pointer;">Mark notified</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" style="padding:0.6rem;color:#666;">No deadlines. Add one below or edit the incident category to data_breach.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+<details style="margin:1rem 0;">
+  <summary style="cursor:pointer;">+ Add deadline</summary>
+  <form method="post" action="{% url 'deadline_create' incident.pk %}" style="margin-top:0.5rem;">
+    {% csrf_token %}
+    {{ deadline_form.as_p }}
+    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+  </form>
+</details>
+
+<h2 style="margin-top:2rem;">Linked risks ({{ risk_links|length }})</h2>
+<table style="width:100%;border-collapse:collapse;">
+  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
+    <th style="padding:0.4rem;">Code</th><th>Title</th>
+  </tr></thead>
+  <tbody>
+    {% for rl in risk_links %}
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:0.4rem;"><a href="{% url 'risk_detail' rl.risk.pk %}">{{ rl.risk.code }}</a></td>
+        <td>{{ rl.risk.title }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="2" style="padding:0.6rem;color:#666;">None.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+<details style="margin:1rem 0;">
+  <summary style="cursor:pointer;">+ Link risk</summary>
+  <form method="post" action="{% url 'incident_risk_link_create' incident.pk %}" style="margin-top:0.5rem;">
+    {% csrf_token %}{{ risk_form.as_p }}
+    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+  </form>
+</details>
+
+<h2 style="margin-top:2rem;">Linked vendors ({{ vendor_links|length }})</h2>
+<table style="width:100%;border-collapse:collapse;">
+  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
+    <th style="padding:0.4rem;">Vendor</th><th>Notes</th>
+  </tr></thead>
+  <tbody>
+    {% for vl in vendor_links %}
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:0.4rem;"><a href="{% url 'vendor_detail' vl.vendor.pk %}">{{ vl.vendor.name }}</a></td>
+        <td>{{ vl.notes|truncatechars:80|default:"-" }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="2" style="padding:0.6rem;color:#666;">None.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+<details style="margin:1rem 0;">
+  <summary style="cursor:pointer;">+ Link vendor</summary>
+  <form method="post" action="{% url 'incident_vendor_link_create' incident.pk %}" style="margin-top:0.5rem;">
+    {% csrf_token %}{{ vendor_form.as_p }}
+    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+  </form>
+</details>
+
+<h2 style="margin-top:2rem;">Affected assets ({{ asset_links|length }})</h2>
+<table style="width:100%;border-collapse:collapse;">
+  <thead><tr style="border-bottom:1px solid #ddd;text-align:left;">
+    <th style="padding:0.4rem;">Asset</th><th>Type</th>
+  </tr></thead>
+  <tbody>
+    {% for al in asset_links %}
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:0.4rem;">{{ al.asset.name }}</td>
+        <td>{{ al.asset.get_type_display }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="2" style="padding:0.6rem;color:#666;">None.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+<details style="margin:1rem 0;">
+  <summary style="cursor:pointer;">+ Link asset</summary>
+  <form method="post" action="{% url 'incident_asset_link_create' incident.pk %}" style="margin-top:0.5rem;">
+    {% csrf_token %}{{ asset_form.as_p }}
+    <button type="submit" style="padding:0.4rem 1rem;">Save</button>
+  </form>
+</details>
+{% endblock %}

@@ -24,6 +24,8 @@ INSTALLED_APPS = [
     "apps.controls",
     "apps.policies",
     "apps.audits",
+    "apps.vendors",
+    "apps.incidents",
 ]
 
 MIDDLEWARE = [

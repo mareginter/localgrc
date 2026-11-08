@@ -9,5 +9,7 @@ urlpatterns = [
     path("controls/", include("apps.controls.urls")),
     path("policies/", include("apps.policies.urls")),
     path("audits/", include("apps.audits.urls")),
+    path("vendors/", include("apps.vendors.urls")),
+    path("incidents/", include("apps.incidents.urls")),
     path("", include("django.contrib.auth.urls")),
 ]

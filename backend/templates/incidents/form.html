@@ -1,0 +1,11 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<h1>{{ action }}</h1>
+<form method="post" style="max-width:600px;">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" style="padding:0.5rem 1.2rem;">Save</button>
+  {% if incident %}<a href="{% url 'incident_detail' incident.pk %}" style="margin-left:1rem;">Cancel</a>
+  {% else %}<a href="{% url 'incident_list' %}" style="margin-left:1rem;">Cancel</a>{% endif %}
+</form>
+{% endblock %}
