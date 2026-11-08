@@ -19,7 +19,7 @@ services:
       db: { condition: service_healthy }
     environment:
       DJANGO_SETTINGS_MODULE: localgrc.settings
-      DJANGO_DEBUG: "false"
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?set DJANGO_SECRET_KEY}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
       DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:8080}
