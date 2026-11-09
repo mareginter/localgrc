@@ -15,6 +15,10 @@
   </div>
   <div class="page-actions">
     <a href="{% url 'risk_list' %}" class="btn btn-neutral">← Back to list</a>
+    
+    <!-- BOTÃO DO PDF AQUI -->
+    <a href="{% url 'risk_export_pdf' risk.pk %}" class="btn btn-neutral" style="border-color:#cbd5e1;color:#475569;">📄 Export PDF</a>
+    
     <a href="{% url 'risk_update' risk.pk %}" class="btn btn-primary">Edit risk</a>
   </div>
 </div>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <title>Relatório de Risco - {{ risk.code }}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 2cm;
+      @bottom-right {
+        content: "Página " counter(page) " de " counter(pages);
+        font-size: 9pt;
+        color: #666;
+      }
+    }
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; line-height: 1.5; }
+    .header { border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 20px; }
+    .header h1 { color: #2563eb; margin: 0; font-size: 24pt; }
+    .header p { margin: 5px 0 0 0; color: #666; font-size: 10pt; }
+    
+    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+    .meta-table td { padding: 8px; border: 1px solid #e5e7eb; font-size: 10pt; }
+    .meta-table td strong { color: #4b5563; width: 120px; display: inline-block; }
+    
+    h2 { font-size: 14pt; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-top: 30px; }
+    p { font-size: 11pt; }
+    
+    .risk-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 10pt; }
+    .badge-critical { background: #fecaca; color: #7f1d1d; }
+    .badge-high { background: #fed7aa; color: #7c2d12; }
+    .badge-medium { background: #fef3c7; color: #78350f; }
+    .badge-low { background: #dcfce7; color: #14532d; }
+    
+    table.data { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table.data th { background: #f9fafb; text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 9pt; color: #4b5563; }
+    table.data td { padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 10pt; }
+    
+    .footer { margin-top: 50px; font-size: 8pt; color: #9ca3af; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Relatório de Risco</h1>
+    <p>{{ risk.code }} - {{ risk.title }}</p>
+  </div>
+
+  <table class="meta-table">
+    <tr>
+      <td><strong>Categoria:</strong> {{ risk.get_category_display }}</td>
+      <td><strong>Estado:</strong> {{ risk.get_status_display }}</td>
+    </tr>
+    <tr>
+      <td><strong>Proprietário:</strong> {{ risk.owner.full_name|default:"-" }}</td>
+      <td><strong>Departamento:</strong> {{ risk.department|default:"-" }}</td>
+    </tr>
+    <tr>
+      <td colspan="2">
+        <strong>Nível de Risco:</strong>
+        {% if risk.risk_level == 'critical' %}<span class="risk-badge badge-critical">Crítico</span>
+        {% elif risk.risk_level == 'high' %}<span class="risk-badge badge-high">Alto</span>
+        {% elif risk.risk_level == 'medium' %}<span class="risk-badge badge-medium">Médio</span>
+        {% else %}<span class="risk-badge badge-low">Baixo</span>{% endif %}
+      </td>
+    </tr>
+  </table>
+
+  {% if risk.description %}
+    <h2>Descrição</h2>
+    <p>{{ risk.description|linebreaks }}</p>
+  {% endif %}
+
+  <h2>Avaliações (Assessments)</h2>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>Tipo</th>
+        <th>Probabilidade (L)</th>
+        <th>Impacto (I)</th>
+        <th>Score</th>
+        <th>Avaliado por</th>
+        <th>Data</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in risk.assessments.all %}
+        <tr>
+          <td>{{ a.get_type_display }}</td>
+          <td>{{ a.likelihood }}</td>
+          <td>{{ a.impact }}</td>
+          <td><strong>{{ a.score }}</strong></td>
+          <td>{{ a.assessed_by.full_name|default:"-" }}</td>
+          <td>{{ a.assessed_at|date:"Y-m-d" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" style="text-align:center;color:#666;">Nenhuma avaliação registada.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Planos de Tratamento (Treatments)</h2>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>Estratégia</th>
+        <th>Descrição</th>
+        <th>Responsável</th>
+        <th>Data Limite</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in risk.treatments.all %}
+        <tr>
+          <td><strong>{{ t.get_strategy_display }}</strong></td>
+          <td>{{ t.description }}</td>
+          <td>{{ t.responsible.full_name|default:"-" }}</td>
+          <td>{{ t.due_date|default:"-" }}</td>
+          <td>{{ t.get_status_display }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" style="text-align:center;color:#666;">Nenhum plano de tratamento registado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    Gerado por LocalGRC em {% now "Y-m-d H:i" %} | Documento Confidencial
+  </div>
+
+</body>
+</html>

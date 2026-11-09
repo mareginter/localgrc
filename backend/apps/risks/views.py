@@ -2,18 +2,23 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 
 from apps.core.models import Organization
 
 from .forms import AssessmentForm, AssetForm, RiskForm, TreatmentForm
 from .models import Asset, Risk
 
+import weasyprint
+
 
 def _org(request):
     return Organization.objects.first()
 
 
-# â”€â”€â”€ Risks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -------------------- Risks --------------------
+
 @login_required
 def risk_list(request):
     org = _org(request)
@@ -40,6 +45,27 @@ def risk_detail(request, pk):
         "assessment_form": AssessmentForm(),
         "treatment_form": TreatmentForm(),
     })
+
+
+@login_required
+def risk_export_pdf(request, pk):
+    org = _org(request)
+    risk = get_object_or_404(Risk, pk=pk, organization=org)
+    
+    # Renderiza o HTML com os dados do risco
+    html_string = render_to_string('risks/pdf_report.html', {
+        'risk': risk,
+        'request': request,
+    })
+    
+    # Converte o HTML para PDF usando o WeasyPrint
+    html = weasyprint.HTML(string=html_string, base_url=request.build_absolute_uri())
+    pdf = html.write_pdf()
+    
+    # Prepara a resposta de download
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="Risk_{risk.code}.pdf"'
+    return response
 
 
 @login_required
@@ -89,7 +115,8 @@ def risk_matrix(request):
     return render(request, "risks/matrix.html", {"matrix": matrix})
 
 
-# â”€â”€â”€ Assets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -------------------- Assets --------------------
+
 @login_required
 def asset_list(request):
     org = _org(request)
@@ -110,7 +137,8 @@ def asset_create(request):
     return render(request, "risks/form.html", {"form": form, "action": "Create asset"})
 
 
-# â”€â”€â”€ Assessments & Treatments (inline POSTs) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -------------------- Assessments & Treatments --------------------
+
 @login_required
 def assessment_create(request, pk):
     org = _org(request)

@@ -12,4 +12,5 @@ urlpatterns = [
     path("<uuid:pk>/treatments/new/", views.treatment_create, name="treatment_create"),
     path("assets/", views.asset_list, name="asset_list"),
     path("assets/new/", views.asset_create, name="asset_create"),
+    path("risks/<uuid:pk>/pdf/", views.risk_export_pdf, name="risk_export_pdf"),
 ]

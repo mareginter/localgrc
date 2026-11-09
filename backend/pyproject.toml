@@ -9,6 +9,7 @@ dependencies = [
     "gunicorn>=21",
     "whitenoise>=6",
     "ollama>=0.4",
+    "weasyprint>=61.0",
 ]
 
 [project.optional-dependencies]
