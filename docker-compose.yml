@@ -66,6 +66,23 @@ services:
       - uploads:/data/uploads:ro
       - staticfiles:/app/staticfiles:ro
 
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGUSER: ${POSTGRES_USER:-localgrc}
+      PGDATABASE: ${POSTGRES_DB:-localgrc}
+    user: root
+    volumes:
+      - ./backups:/backups
+      - uploads:/data/uploads:ro
+      - ./deploy/backup.sh:/backup.sh:ro
+    entrypoint: ["/bin/sh", "-c", "while true; do sh /backup.sh; sleep 86400; done"]  
+
 volumes:
   pgdata:
   uploads:

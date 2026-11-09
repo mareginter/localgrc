@@ -14,3 +14,5 @@ htmlcov/
 *.bak
 
 *.bak
+
+backups/
