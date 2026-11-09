@@ -1,10 +1,14 @@
+import weasyprint
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.utils import timezone as dj_timezone
+from django.db import transaction
 
 from apps.core.models import Organization, WorkflowDefinition, WorkflowInstance
 
@@ -81,6 +85,25 @@ def audit_detail(request, pk):
 
 
 @login_required
+def audit_export_pdf(request, pk):
+    org = _org(request)
+    audit = get_object_or_404(Audit, pk=pk, organization=org)
+    findings = audit.findings.all()
+    
+    html_string = render_to_string('audits/pdf_report.html', {
+        'audit': audit, 
+        'findings': findings, 
+        'request': request
+    })
+    
+    pdf = weasyprint.HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+    
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="Audit_{audit.code}.pdf"'
+    return response
+
+
+@login_required
 def audit_create(request):
     org = _org(request)
     form = AuditForm(request.POST or None)
@@ -107,7 +130,6 @@ def audit_update(request, pk):
 
 @login_required
 def audit_transition(request, pk):
-    from django.db import transaction
     org = _org(request)
     audit = get_object_or_404(Audit, pk=pk, organization=org)
     if request.method != "POST":
@@ -178,7 +200,6 @@ def finding_update(request, pk):
 
 @login_required
 def finding_transition(request, pk):
-    from django.db import transaction
     org = _org(request)
     finding = get_object_or_404(AuditFinding, pk=pk, audit__organization=org)
     if request.method != "POST":

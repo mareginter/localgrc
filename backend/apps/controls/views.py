@@ -1,12 +1,18 @@
 from collections import defaultdict
+import csv
+import weasyprint
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.http import HttpResponse, Http404
+from django.template.loader import render_to_string
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied
 
-from apps.core.models import Organization
-from apps.frameworks.models import Framework, FrameworkVersion
+from apps.core.models import Organization, WorkflowDefinition, WorkflowInstance
+from apps.frameworks.models import Framework
 
 from .forms import ControlForm, ControlImplementationForm, ControlRequirementForm
 from .models import Control, ControlRequirement
@@ -14,6 +20,36 @@ from .models import Control, ControlRequirement
 
 def _org(request):
     return Organization.objects.first()
+
+
+def _build_coverage_data(org):
+    coverage_data = []
+    for framework in Framework.objects.filter(organization=org):
+        for version in framework.versions.filter(is_active=True):
+            reqs = version.requirements.all()
+            total = reqs.count()
+            covered_full = ControlRequirement.objects.filter(
+                requirement__in=reqs, coverage="full"
+            ).values("requirement").distinct().count()
+            covered_partial = ControlRequirement.objects.filter(
+                requirement__in=reqs, coverage="partial"
+            ).values("requirement").distinct().count()
+            covered_na = ControlRequirement.objects.filter(
+                requirement__in=reqs, coverage="na"
+            ).values("requirement").distinct().count()
+            uncovered = total - covered_full - covered_partial - covered_na
+            pct = round((covered_full / total) * 100) if total else 0
+            coverage_data.append({
+                "framework": framework,
+                "version": version,
+                "total": total,
+                "full": covered_full,
+                "partial": covered_partial,
+                "na": covered_na,
+                "uncovered": uncovered,
+                "pct": pct,
+            })
+    return coverage_data
 
 
 @login_required
@@ -137,37 +173,19 @@ def implementation_create(request, pk):
 @login_required
 def framework_coverage(request):
     org = _org(request)
-    coverage_data = []
-    for framework in Framework.objects.filter(organization=org):
-        for version in framework.versions.filter(is_active=True):
-            reqs = version.requirements.all()
-            total = reqs.count()
-            covered_full = ControlRequirement.objects.filter(
-                requirement__in=reqs, coverage="full"
-            ).values("requirement").distinct().count()
-            covered_partial = ControlRequirement.objects.filter(
-                requirement__in=reqs, coverage="partial"
-            ).values("requirement").distinct().count()
-            covered_na = ControlRequirement.objects.filter(
-                requirement__in=reqs, coverage="na"
-            ).values("requirement").distinct().count()
-            uncovered = total - covered_full - covered_partial - covered_na
-            pct = round((covered_full / total) * 100) if total else 0
-            coverage_data.append({
-                "framework": framework,
-                "version": version,
-                "total": total,
-                "full": covered_full,
-                "partial": covered_partial,
-                "na": covered_na,
-                "uncovered": uncovered,
-                "pct": pct,
-            })
+    coverage_data = _build_coverage_data(org)
     return render(request, "controls/coverage.html", {"coverage_data": coverage_data})
-# --- SoA export ---
-import csv
-from django.http import HttpResponse
-from apps.frameworks.models import Framework
+
+
+@login_required
+def coverage_export_pdf(request):
+    org = _org(request)
+    coverage_data = _build_coverage_data(org)
+    html_string = render_to_string('controls/pdf_coverage.html', {'coverage_data': coverage_data, 'request': request})
+    pdf = weasyprint.HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="Coverage_Report.pdf"'
+    return response
 
 
 @login_required
@@ -176,7 +194,6 @@ def soa_export(request, framework_pk):
     framework = get_object_or_404(Framework, pk=framework_pk, organization=org)
     version = framework.versions.filter(is_active=True).first() or framework.versions.first()
     if not version:
-        from django.http import Http404
         raise Http404("Framework has no versions.")
 
     response = HttpResponse(content_type="text/csv")
@@ -211,12 +228,6 @@ def soa_export(request, framework_pk):
             req.category, coverage, controls, just,
         ])
     return response
-
-
-# --- Control workflow transition ---
-from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import PermissionDenied
-from apps.core.models import WorkflowDefinition, WorkflowInstance
 
 
 def _get_or_create_workflow_instance(control, org):

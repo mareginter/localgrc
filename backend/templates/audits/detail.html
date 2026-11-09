@@ -11,6 +11,7 @@
   </div>
   <div class="page-actions">
     <a href="{% url 'audit_list' %}" class="btn btn-neutral">← Back to list</a>
+    <a href="{% url 'audit_export_pdf' audit.pk %}" class="btn btn-neutral" style="border-color:#cbd5e1;color:#475569;">📄 Export PDF</a>
     <a href="{% url 'audit_update' audit.pk %}" class="btn btn-primary">Edit audit</a>
   </div>
 </div>

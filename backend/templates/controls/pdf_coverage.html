@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <title>Relatório de Cobertura</title>
+    <style>
+    @page { size: A4; margin: 2cm; @bottom-right { content: "Página " counter(page) " de " counter(pages); font-size: 9pt; color: #666; } }
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; line-height: 1.5; }
+    .header { border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 20px; }
+    .header h1 { color: #2563eb; margin: 0; font-size: 24pt; }
+    .header p { margin: 5px 0 0 0; color: #666; font-size: 10pt; }
+    h2 { font-size: 14pt; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-top: 30px; }
+    table.data { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table.data th { background: #f9fafb; text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 9pt; color: #4b5563; }
+    table.data td { padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 10pt; }
+    .progress-wrap { width: 100%; background: #e5e7eb; height: 8px; border-radius: 4px; display: inline-block; vertical-align: middle; }
+    .progress-bar { background: #16a34a; height: 8px; border-radius: 4px; }
+    .badge { padding: 3px 8px; border-radius: 3px; font-weight: bold; font-size: 9pt; }
+    .badge-danger { background: #fecaca; color: #7f1d1d; }
+    .badge-warning { background: #fef3c7; color: #78350f; }
+    .badge-info { background: #dbeafe; color: #1e40af; }
+    .badge-neutral { background: #f3f4f6; color: #374151; }
+    .footer { margin-top: 50px; font-size: 8pt; color: #9ca3af; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Relatório de Cobertura de Controlos</h1>
+    <p>Percentagem de requisitos cobertos por frameworks.</p>
+  </div>
+  <table class="data">
+    <thead><tr><th>Framework</th><th>Total</th><th>Full</th><th>Partial</th><th>N/A</th><th>Uncovered</th><th>Cobertura</th></tr></thead>
+    <tbody>
+      {% for row in coverage_data %}
+        <tr>
+          <td><strong>{{ row.framework.name }} {{ row.version.version }}</strong></td>
+          <td>{{ row.total }}</td>
+          <td style="color:#16a34a;">{{ row.full }}</td>
+          <td style="color:#ea580c;">{{ row.partial }}</td>
+          <td style="color:#6b7280;">{{ row.na }}</td>
+          <td style="color:#dc2626;">{{ row.uncovered }}</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="progress-wrap" style="flex:1;"><div class="progress-bar" style="width: {{ row.pct }}%;"></div></div>
+              <strong>{{ row.pct }}%</strong>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="footer">Gerado por LocalGRC em {% now "Y-m-d H:i" %} | Documento Confidencial</div>
+</body>
+</html>

@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <title>Relatório de Auditoria - {{ audit.code }}</title>
+    <style>
+    @page { size: A4; margin: 2cm; @bottom-right { content: "Página " counter(page) " de " counter(pages); font-size: 9pt; color: #666; } }
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; line-height: 1.5; }
+    .header { border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 20px; }
+    .header h1 { color: #2563eb; margin: 0; font-size: 24pt; }
+    .header p { margin: 5px 0 0 0; color: #666; font-size: 10pt; }
+    h2 { font-size: 14pt; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-top: 30px; }
+    table.data { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table.data th { background: #f9fafb; text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 9pt; color: #4b5563; }
+    table.data td { padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 10pt; }
+    .progress-wrap { width: 100%; background: #e5e7eb; height: 8px; border-radius: 4px; display: inline-block; vertical-align: middle; }
+    .progress-bar { background: #16a34a; height: 8px; border-radius: 4px; }
+    .badge { padding: 3px 8px; border-radius: 3px; font-weight: bold; font-size: 9pt; }
+    .badge-danger { background: #fecaca; color: #7f1d1d; }
+    .badge-warning { background: #fef3c7; color: #78350f; }
+    .badge-info { background: #dbeafe; color: #1e40af; }
+    .badge-neutral { background: #f3f4f6; color: #374151; }
+    .footer { margin-top: 50px; font-size: 8pt; color: #9ca3af; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Relatório de Auditoria</h1>
+    <p>{{ audit.code }} - {{ audit.title }}</p>
+  </div>
+  <table class="data" style="margin-bottom: 20px;">
+    <tr><td><strong>Tipo:</strong> {{ audit.get_audit_type_display }}</td><td><strong>Estado:</strong> {{ audit.get_status_display }}</td></tr>
+    <tr><td><strong>Auditor:</strong> {{ audit.auditor_org|default:audit.lead_auditor.full_name|default:"-" }}</td><td><strong>Planeado:</strong> {{ audit.planned_start|date:"Y-m-d"|default:"-" }}</td></tr>
+  </table>
+  
+  {% if audit.scope %}
+    <h2>Âmbito (Scope)</h2>
+    <p>{{ audit.scope|linebreaks }}</p>
+  {% endif %}
+
+  <h2>Constatações (Findings) - {{ findings|length }}</h2>
+  <table class="data">
+    <thead><tr><th>Código</th><th>Severidade</th><th>Título</th><th>Estado</th></tr></thead>
+    <tbody>
+      {% for f in findings %}
+        <tr>
+          <td><strong>{{ f.code }}</strong></td>
+          <td>
+            {% if f.severity == 'major_nc' %}<span class="badge badge-danger">Major NC</span>
+            {% elif f.severity == 'minor_nc' %}<span class="badge badge-warning">Minor NC</span>
+            {% elif f.severity == 'observation' %}<span class="badge badge-info">Observation</span>
+            {% else %}<span class="badge badge-neutral">Opportunity</span>{% endif %}
+          </td>
+          <td>{{ f.title }}</td>
+          <td>{{ f.get_status_display }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" style="text-align:center;color:#666;">Nenhuma constatação.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="footer">Gerado por LocalGRC em {% now "Y-m-d H:i" %} | Documento Confidencial</div>
+</body>
+</html>

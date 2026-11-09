@@ -1,5 +1,4 @@
 from django.urls import path
-
 from . import views
 
 urlpatterns = [
@@ -14,4 +13,5 @@ urlpatterns = [
     path("<uuid:pk>/edit/", views.audit_update, name="audit_update"),
     path("<uuid:pk>/transition/", views.audit_transition, name="audit_transition"),
     path("<uuid:pk>/findings/new/", views.finding_create, name="finding_create"),
+    path("<uuid:pk>/pdf/", views.audit_export_pdf, name="audit_export_pdf"),
 ]
