@@ -13,6 +13,12 @@ from apps.policies.models import Policy
 from apps.risks.models import Risk
 from apps.vendors.models import Vendor
 
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.shortcuts import render, redirect, get_object_or_404
+from .forms import UserCreateForm, UserUpdateForm
+
 from .models import AuditLog, Organization
 
 
@@ -178,3 +184,35 @@ def home(request):
         "recent_activity": recent_activity,
         "alerts": alerts,
     })
+
+User = get_user_model()
+
+def is_admin(user):
+    return user.is_superuser or user.is_staff
+
+@login_required
+@user_passes_test(is_admin)
+def user_list(request):
+    users = User.objects.all().order_by('first_name', 'email')
+    return render(request, "core/user_list.html", {"users": users})
+
+@login_required
+@user_passes_test(is_admin)
+def user_create(request):
+    form = UserCreateForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "User created successfully.")
+        return redirect("user_list")
+    return render(request, "core/user_form.html", {"form": form, "action": "Add new user"})
+
+@login_required
+@user_passes_test(is_admin)
+def user_update(request, pk):
+    user_obj = get_object_or_404(User, pk=pk)
+    form = UserUpdateForm(request.POST or None, instance=user_obj)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "User updated successfully.")
+        return redirect("user_list")
+    return render(request, "core/user_form.html", {"form": form, "action": f"Edit {user_obj.email}", "user_obj": user_obj})

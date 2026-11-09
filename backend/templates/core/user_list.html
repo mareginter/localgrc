@@ -1,0 +1,42 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<div class="page-header">
+  <div>
+    <h1>Team Management</h1>
+    <p class="page-subtitle">Manage users and their access to the GRC platform.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'user_create' %}" class="btn btn-primary">+ Add User</a>
+  </div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <table>
+    <thead><tr>
+      <th>Name</th><th>Email</th><th>Role</th><th>Status</th><th class="text-right">Actions</th>
+    </tr></thead>
+    <tbody>
+      {% for u in users %}
+        <tr>
+          <td style="font-weight:600;">{{ u.first_name }} {{ u.last_name }}</td>
+          <td>{{ u.email }}</td>
+          <td>
+            {% if u.is_superuser %}<span class="badge badge-critical">Superadmin</span>
+            {% elif u.is_staff %}<span class="badge badge-info">Staff / Admin</span>
+            {% else %}<span class="badge badge-neutral">Standard User</span>{% endif %}
+          </td>
+          <td>
+            {% if u.is_active %}<span class="badge badge-success">Active</span>
+            {% else %}<span class="badge badge-danger">Inactive</span>{% endif %}
+          </td>
+          <td class="text-right">
+            <a href="{% url 'user_update' u.pk %}" class="btn btn-neutral btn-sm">Edit</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5"><div class="empty">No users found.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
