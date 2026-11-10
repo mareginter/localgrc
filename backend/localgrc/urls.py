@@ -13,5 +13,6 @@ urlpatterns = [
     path("incidents/", include("apps.incidents.urls")),
     path("evidence/", include("apps.evidence.urls")),
     path("assistant/", include("apps.assistant.urls")),
+    path("library/", include("apps.library.urls")),
     path("", include("django.contrib.auth.urls")),
 ]

@@ -1,0 +1,48 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<div class="page-header">
+  <div>
+    <h1>Document Library</h1>
+    <p class="page-subtitle">Standardized templates for policies, risk assessments, and audits.</p>
+  </div>
+  <div class="page-actions">
+    {% if request.user.is_staff %}
+      <a href="{% url 'template_create' %}" class="btn btn-primary">+ Upload Template</a>
+    {% endif %}
+  </div>
+</div>
+
+<form method="get" class="card" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;padding:0.75rem 1rem;margin-bottom:1rem;">
+  <select name="category" style="width:auto;min-width:200px;">
+    <option value="">All Categories</option>
+    {% for v,l in category_choices %}<option value="{{ v }}" {% if v == category %}selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  <a href="{% url 'template_list' %}" class="btn btn-neutral">Reset</a>
+</form>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <table>
+    <thead><tr>
+      <th>Document Title</th><th>Category</th><th>Uploaded By</th><th class="text-right">Download</th>
+    </tr></thead>
+    <tbody>
+      {% for t in templates %}
+        <tr>
+          <td>
+            <strong>{{ t.title }}</strong>
+            {% if t.description %}<div class="muted" style="font-size:0.8rem;margin-top:0.2rem;">{{ t.description }}</div>{% endif %}
+          </td>
+          <td><span class="badge badge-neutral">{{ t.get_category_display }}</span></td>
+          <td>{{ t.uploaded_by.full_name|default:t.uploaded_by.email|default:"System" }}</td>
+          <td class="text-right">
+            <a href="{% url 'template_download' t.pk %}" class="btn btn-primary btn-sm">Download</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4"><div class="empty">No templates found in the library.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

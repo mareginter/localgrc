@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "apps.incidents",
     "apps.evidence",
     "apps.assistant",
+    'apps.library',
 
 ]
 

@@ -61,6 +61,7 @@
       <a href="{% url 'incident_list' %}" class="{% if '/incidents/' in request.path and '/incidents/deadlines/' not in request.path %}active{% endif %}">Incidents</a>
       <a href="{% url 'deadline_dashboard' %}" class="{% if '/incidents/deadlines/' in request.path %}active{% endif %}">Deadlines</a>
       <a href="{% url 'evidence_list' %}" class="{% if '/evidence/' in request.path %}active{% endif %}">Evidence</a>
+      <a href="{% url 'template_list' %}" class="{% if '/library/' in request.path %}active{% endif %}">Library</a>
       <a href="{% url 'assistant_home' %}" class="{% if '/assistant/' in request.path %}active{% endif %}">Assistant</a>
       <a href="{% url 'user_list' %}" class="{% if '/users/' in request.path %}active{% endif %}">Team</a>
     </nav>
