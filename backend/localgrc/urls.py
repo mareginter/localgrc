@@ -1,4 +1,4 @@
-from django.contrib import admin
+﻿from django.contrib import admin
 from django.urls import include, path
 
 urlpatterns = [
@@ -14,5 +14,7 @@ urlpatterns = [
     path("evidence/", include("apps.evidence.urls")),
     path("assistant/", include("apps.assistant.urls")),
     path("library/", include("apps.library.urls")),
+    path("vulnerabilities/", include("apps.vulnerabilities.urls")),
     path("", include("django.contrib.auth.urls")),
 ]
+

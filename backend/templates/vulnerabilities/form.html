@@ -1,0 +1,20 @@
+﻿{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<div class="page-header">
+  <div><h1>{{ action }}</h1></div>
+  <div class="page-actions">
+    {% if vuln %}<a href="{% url 'vuln_detail' vuln.pk %}" class="btn btn-neutral">Cancel</a>
+    {% else %}<a href="{% url 'vuln_list' %}" class="btn btn-neutral">Cancel</a>{% endif %}
+  </div>
+</div>
+
+<div class="card" style="max-width:700px;">
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--c-border);">
+      <button type="submit" class="btn btn-primary">Save Vulnerability</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

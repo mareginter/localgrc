@@ -1,0 +1,62 @@
+﻿{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<div class="page-header">
+  <div>
+    <h1>{{ vuln.title }}</h1>
+    <p class="page-subtitle">
+      {% if vuln.cve_id %}<strong>{{ vuln.cve_id }}</strong> | {% endif %}
+      Endpoint: <code>{{ vuln.affected_endpoint }}</code>
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'vuln_list' %}" class="btn btn-neutral">&larr; Back to list</a>
+    <a href="{% url 'vuln_update' vuln.pk %}" class="btn btn-primary">Edit</a>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:1rem;">
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">Severity</div>
+      <div style="font-weight:500;margin-top:0.25rem;">
+        {% if vuln.severity == 'critical' %}<span class="badge badge-critical">Critical</span>
+        {% elif vuln.severity == 'high' %}<span class="badge badge-high">High</span>
+        {% elif vuln.severity == 'medium' %}<span class="badge badge-medium">Medium</span>
+        {% else %}<span class="badge badge-neutral">{{ vuln.get_severity_display }}</span>{% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">CVSS Score</div>
+      <div style="font-weight:800;margin-top:0.25rem;font-size:1.2rem;">{{ vuln.cvss_score|default:"-" }}</div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">Status</div>
+      <div style="font-weight:500;margin-top:0.25rem;">
+        {% if vuln.status == 'open' %}<span class="badge badge-danger">Open</span>
+        {% elif vuln.status == 'in_progress' %}<span class="badge badge-warning">In Progress</span>
+        {% elif vuln.status == 'mitigated' %}<span class="badge badge-success">Mitigated</span>
+        {% else %}<span class="badge badge-neutral">{{ vuln.get_status_display }}</span>{% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">Due Date</div>
+      <div style="font-weight:500;margin-top:0.25rem;{% if vuln.is_overdue %}color:#dc2626;{% endif %}">{{ vuln.due_date|default:"-" }}</div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:700;">Owner</div>
+      <div style="font-weight:500;margin-top:0.25rem;">{{ vuln.owner.full_name|default:"-" }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.25rem;">
+  <div class="card">
+    <h2 style="margin-top:0;">Description</h2>
+    <p>{{ vuln.description|linebreaks|default:"No description provided." }}</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--c-primary);">
+    <h2 style="margin-top:0;">Remediation Plan</h2>
+    <p>{{ vuln.remediation_plan|linebreaks|default:"No remediation plan defined yet." }}</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+﻿{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<div class="page-header">
+  <div>
+    <h1>Vulnerability Dashboard</h1>
+    <p class="page-subtitle">Overview of your security posture.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'vuln_list' %}" class="btn btn-neutral">â† Back to list</a>
+  </div>
+</div>
+
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+  <div class="kpi">
+    <span class="kpi-label">Total Vulnerabilities</span>
+    <span class="kpi-value">{{ total }}</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label">Critical Open</span>
+    <span class="kpi-value" style="color:#dc2626;">{{ critical_count }}</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label">High Open</span>
+    <span class="kpi-value" style="color:#ea580c;">{{ high_count }}</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label">Overdue Remediation</span>
+    <span class="kpi-value" style="color:#dc2626;">{{ overdue }}</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">Breakdown by Severity</h2>
+  <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1rem;">
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:0.2rem;">
+        <span><strong style="color:#dc2626;">Critical</strong></span>
+        <span>{{ dist.critical|default:"0" }}</span>
+      </div>
+      <div class="progress-bar"><div style="width:{% if total %}{% widthratio dist.critical|default:0 total 100 %}%{% else %}0%{% endif %};background:#dc2626;"></div></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:0.2rem;">
+        <span><strong style="color:#ea580c;">High</strong></span>
+        <span>{{ dist.high|default:"0" }}</span>
+      </div>
+      <div class="progress-bar"><div style="width:{% if total %}{% widthratio dist.high|default:0 total 100 %}%{% else %}0%{% endif %};background:#ea580c;"></div></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:0.2rem;">
+        <span><strong style="color:#d97706;">Medium</strong></span>
+        <span>{{ dist.medium|default:"0" }}</span>
+      </div>
+      <div class="progress-bar"><div style="width:{% if total %}{% widthratio dist.medium|default:0 total 100 %}%{% else %}0%{% endif %};background:#d97706;"></div></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:0.2rem;">
+        <span><strong style="color:#16a34a;">Low / Info</strong></span>
+        <span>{{ dist.low|default:"0" }}</span>
+      </div>
+      <div class="progress-bar"><div style="width:{% if total %}{% widthratio dist.low|default:0 total 100 %}%{% else %}0%{% endif %};background:#16a34a;"></div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

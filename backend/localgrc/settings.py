@@ -1,4 +1,4 @@
-import os
+﻿import os
 from pathlib import Path
 
 import dj_database_url
@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "apps.incidents",
     "apps.evidence",
     "apps.assistant",
+    'apps.vulnerabilities',
     'apps.library',
 
 ]
@@ -117,3 +118,4 @@ OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
 OLLAMA_EMBED_MODEL = os.environ.get("OLLAMA_EMBED_MODEL", "nomic-embed-text")
 OLLAMA_TIMEOUT = int(os.environ.get("OLLAMA_TIMEOUT", "120"))
+
