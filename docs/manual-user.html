@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual do Utilizador - LocalGRC</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --border: #e2e8f0; --sidebar: #ffffff; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; line-height: 1.6; }
+        
+        /* Sidebar */
+        nav { width: 280px; background: var(--sidebar); border-right: 1px solid var(--border); padding: 2rem 1.5rem; position: fixed; height: 100vh; overflow-y: auto; }
+        nav h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 1px; }
+        nav ul { list-style: none; }
+        nav li { margin-bottom: 0.5rem; }
+        nav a { text-decoration: none; color: #475569; font-weight: 500; display: block; padding: 0.4rem 0.6rem; border-radius: 6px; transition: 0.2s; }
+        nav a:hover { background: #eff6ff; color: var(--primary); }
+        
+        /* Content */
+        main { margin-left: 280px; padding: 3rem 4rem; max-width: 900px; width: 100%; }
+        h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; color: #0f172a; }
+        .subtitle { color: #64748b; margin-bottom: 2.5rem; font-size: 1.1rem; }
+        h2 { font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); color: #0f172a; }
+        h3 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; color: #334155; }
+        p { margin-bottom: 1rem; }
+        ul, ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+        li { margin-bottom: 0.3rem; }
+        
+        /* Callouts */
+        .callout { padding: 1rem; border-radius: 8px; margin: 1.5rem 0; border-left: 4px solid; }
+        .callout.info { background: #eff6ff; border-color: var(--primary); color: #1e3a8a; }
+        .callout.warning { background: #fffbeb; border-color: #f59e0b; color: #78350f; }
+        
+        /* UI Elements */
+        .btn-mock { display: inline-block; padding: 0.2rem 0.6rem; background: var(--primary); color: white; border-radius: 4px; font-size: 0.85rem; font-weight: 600; }
+        code { background: #f1f5f9; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            nav { position: relative; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 1rem; }
+            nav ul { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+            main { margin-left: 0; padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <h2>📘 Manual do Utilizador</h2>
+        <ul>
+            <li><a href="#intro">1. Bem-vindo</a></li>
+            <li><a href="#dashboard">2. O Dashboard</a></li>
+            <li><a href="#risks">3. Gestão de Riscos</a></li>
+            <li><a href="#controls">4. Controlos e Políticas</a></li>
+            <li><a href="#incidents">5. Incidentes e Vulnerabilidades</a></li>
+            <li><a href="#assistant">6. O Assistente AI</a></li>
+            <li><a href="#library">7. Biblioteca de Modelos</a></li>
+        </ul>
+    </nav>
+    <main>
+        <h1>LocalGRC</h1>
+        <p class="subtitle">Manual do Utilizador</p>
+
+        <section id="intro">
+            <h2>1. Bem-vindo ao LocalGRC</h2>
+            <p>O LocalGRC é a plataforma da nossa organização para Gestão de Riscos, Conformidade (Compliance) e Segurança. Tudo o que carregas aqui fica no nosso servidor privado e seguro.</p>
+        </section>
+
+        <section id="dashboard">
+            <h2>2. O Dashboard</h2>
+            <p>Ao entrares, vês o <strong>Dashboard</strong>. É o teu resumo diário de toda a operação:</p>
+            <ul>
+                <li><strong>Riscos Críticos:</strong> Riscos que precisam de atenção imediata.</li>
+                <li><strong>Cobertura:</strong> Quão conformes estamos com as normas (ex: ISO 27001).</li>
+                <li><strong>Prazos:</strong> Incidentes que precisam de ser reportados (ex: RGPD).</li>
+                <li><strong>Atividade Recente:</strong> O que a tua equipa andou a fazer.</li>
+            </ul>
+        </section>
+
+        <section id="risks">
+            <h2>3. Gestão de Riscos (Risks)</h2>
+            <ul>
+                <li><strong>Criar um Risco:</strong> Clica no botão <span class="btn-mock">+ Risk</span> no topo do dashboard. Preenche o título, a categoria e o dono do risco (Owner).</li>
+                <li><strong>Avaliar:</strong> Na página do risco, adiciona uma <strong>Avaliação</strong> (Likelihood x Impact). O sistema calculará o nível de risco automaticamente (Low, Medium, High, Critical).</li>
+                <li><strong>Matriz de Risco:</strong> Na tab <code>Matrix</code>, vê a distribuição visual dos riscos numa grelha 5x5. Clica num risco na matriz para ires direto a ele.</li>
+                <li><strong>Tratamento:</strong> Define o que vais fazer com o risco (Mitigar, Aceitar, Transferir ou Evitar) no separador de Tratamentos.</li>
+            </ul>
+        </section>
+
+        <section id="controls">
+            <h2>4. Controlos e Políticas (Controls & Policies)</h2>
+            <div class="callout info">
+                <strong>Nota:</strong> Se fores o dono de um controlo ou política, és responsável por manter a informação atualizada.
+            </div>
+            <ul>
+                <li><strong>Controls:</strong> São as medidas técnicas ou administrativas. Deves garantir que o estado está atualizado e adicionar <strong>Evidências</strong> (ex: um print ou um log) na tab Evidence.</li>
+                <li><strong>Policies:</strong> Consulta as políticas da empresa. Se fores o dono, podes criar novas versões e submetê-las para aprovação no painel da política.</li>
+            </ul>
+        </section>
+
+        <section id="incidents">
+            <h2>5. Incidentes e Vulnerabilidades</h2>
+            <ul>
+                <li><strong>Incidents:</strong> Se detetares uma falha de segurança, regista um incidente. Se for uma quebra de dados (Data Breach), o sistema cria automaticamente um prazo de 72 horas para notificação ao regulador.</li>
+                <li><strong>Vulnerabilities (Vulns):</strong> Se fores da equipa de IT, usa esta tab para registar falhas técnicas (CVEs) e acompanhar a correção até estarem "Mitigated".</li>
+            </ul>
+        </section>
+
+        <section id="assistant">
+            <h2>6. O Assistente AI (Assistant)</h2>
+            <p>Tens dúvidas sobre uma política interna? Vai à tab <code>Assistant</code> e pergunta em linguagem natural (ex: "Qual é a regra para o tamanho das passwords?").</p>
+            <p>O assistente lê os documentos e PDFs que a empresa carregou e responde com base neles. <em>Nota: O assistente não tem acesso à internet, só aos ficheiros internos.</em></p>
+        </section>
+
+        <section id="library">
+            <h2>7. Biblioteca de Modelos (Library)</h2>
+            <p>Precisas de uma política de passwords ou de um formulário de auditoria para começar? Vai à tab <code>Library</code> e descarrega os nossos modelos padrão em Word ou Excel.</p>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual do Administrador - LocalGRC</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --border: #e2e8f0; --sidebar: #ffffff; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; line-height: 1.6; }
+        nav { width: 280px; background: var(--sidebar); border-right: 1px solid var(--border); padding: 2rem 1.5rem; position: fixed; height: 100vh; overflow-y: auto; }
+        nav h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 1px; }
+        nav ul { list-style: none; }
+        nav li { margin-bottom: 0.5rem; }
+        nav a { text-decoration: none; color: #475569; font-weight: 500; display: block; padding: 0.4rem 0.6rem; border-radius: 6px; transition: 0.2s; }
+        nav a:hover { background: #eff6ff; color: var(--primary); }
+        main { margin-left: 280px; padding: 3rem 4rem; max-width: 900px; width: 100%; }
+        h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; color: #0f172a; }
+        .subtitle { color: #64748b; margin-bottom: 2.5rem; font-size: 1.1rem; }
+        h2 { font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); color: #0f172a; }
+        h3 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; color: #334155; }
+        p { margin-bottom: 1rem; }
+        ul, ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+        li { margin-bottom: 0.3rem; }
+        .callout { padding: 1rem; border-radius: 8px; margin: 1.5rem 0; border-left: 4px solid; }
+        .callout.warning { background: #fffbeb; border-color: #f59e0b; color: #78350f; }
+        .callout.success { background: #f0fdf4; border-color: #16a34a; color: #14532d; }
+        code { background: #f1f5f9; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+        @media (max-width: 768px) { body { flex-direction: column; } nav { position: relative; width: 100%; height: auto; } main { margin-left: 0; padding: 1.5rem; } }
+    </style>
+</head>
+<body>
+    <nav>
+        <h2>📙 Manual do Admin</h2>
+        <ul>
+            <li><a href="#access">1. Acesso Total</a></li>
+            <li><a href="#users">2. Gestão de Equipa</a></li>
+            <li><a href="#frameworks">3. Frameworks e Cobertura</a></li>
+            <li><a href="#audits">4. Auditorias e Fornecedores</a></li>
+            <li><a href="#ai">5. Configurar o Assistente AI</a></li>
+            <li><a href="#backups">6. Backups e Segurança</a></li>
+        </ul>
+    </nav>
+    <main>
+        <h1>LocalGRC</h1>
+        <p class="subtitle">Manual do Administrador (CISO / GRC Manager)</p>
+
+        <section id="access">
+            <h2>1. Acesso Total</h2>
+            <p>Como Administrador (Staff), tens acesso à tab <strong>Team</strong> (Gestão de Equipa) e ao <strong>Django Admin</strong> (localizado no canto superior direito, ideal para ações avançadas de base de dados).</p>
+        </section>
+
+        <section id="users">
+            <h2>2. Gestão de Utilizadores (Team)</h2>
+            <ul>
+                <li><strong>Criar Utilizadores:</strong> Vai a <code>Team -> + Add User</code>. Define o nome, email e uma password temporária.</li>
+                <li><strong>Privilégios:</strong>
+                    <ul>
+                        <li><strong>Standard User:</strong> Apenas vê e edita o que lhe for atribuído (Riscos, Controlos, etc.).</li>
+                        <li><strong>Staff:</strong> Acesso ao Django Admin e permissão para gerir a equipa e fazer upload de biblioteca.</li>
+                        <li><strong>Superadmin:</strong> Acesso total ao sistema e configurações.</li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="callout warning">
+                <strong>Atenção:</strong> Nunca apagues o teu próprio utilizador de Superadmin. Cria sempre um utilizador de emergência (break-glass) com as credenciais guardadas num cofre de passwords (ex: Bitwarden).
+            </div>
+        </section>
+
+        <section id="frameworks">
+            <h2>3. Frameworks e Controlos</h2>
+            <ul>
+                <li>O sistema já vem com o <strong>ISO 27001</strong> e o <strong>NIST CSF</strong> pré-carregados (com descrições oficiais).</li>
+                <li>Vai a <code>Frameworks</code> para veres os requisitos. Mapeia os teus controlos internos a estes requisitos na página de cada controlo.</li>
+                <li><strong>Coverage:</strong> A tab <code>Coverage</code> mostra-te a percentagem de conformidade. Podes exportar este relatório em <strong>PDF</strong> para apresentar à gestão de topo.</li>
+            </ul>
+        </section>
+
+        <section id="audits">
+            <h2>4. Auditorias e Fornecedores</h2>
+            <ul>
+                <li><strong>Audits:</strong> Cria uma auditoria, define o âmbito e adiciona <em>Findings</em> (não conformidades). Gera o relatório PDF no fim para enviar à gestão ou ao auditor externo.</li>
+                <li><strong>Vendors:</strong> Avalia os fornecedores. Garante que os fornecedores críticos têm o <strong>DPA (Data Processing Agreement)</strong> assinado.</li>
+            </ul>
+        </section>
+
+        <section id="ai">
+            <h2>5. Configurar o Assistente AI (RAG)</h2>
+            <p>Para o assistente saber responder sobre as regras da empresa:</p>
+            <ol>
+                <li>Vai à tab <code>Assistant</code>.</li>
+                <li>Faz upload de PDFs de políticas (ex: Política de Segurança da Informação).</li>
+                <li>O sistema vai ler e "vetorizar" o documento (pode demorar alguns segundos).</li>
+                <li>A partir daí, qualquer utilizador pode fazer perguntas no chat e a IA responde com base nesse PDF.</li>
+            </ol>
+        </section>
+
+        <section id="backups">
+            <h2>6. Backups e Segurança</h2>
+            <div class="callout success">
+                <strong>O sistema já faz backups automáticos!</strong> Todos os dias, uma cópia da base de dados e dos ficheiros é guardada na pasta <code>backups/</code> do servidor.
+            </div>
+            <p><strong>Recomendação:</strong> Descarrega a pasta <code>backups/</code> semanalmente para o teu OneDrive/Google Drive como backup off-site. Se o servidor for destruído (ex: incêndio), o backup local também se perde.</p>
+        </section>
+    </main>
+</body>
+</html>

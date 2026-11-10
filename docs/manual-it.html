@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual IT & DevOps - LocalGRC</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --border: #e2e8f0; --sidebar: #ffffff; --danger: #dc2626; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; line-height: 1.6; }
+        nav { width: 280px; background: var(--sidebar); border-right: 1px solid var(--border); padding: 2rem 1.5rem; position: fixed; height: 100vh; overflow-y: auto; }
+        nav h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 1px; }
+        nav ul { list-style: none; }
+        nav li { margin-bottom: 0.5rem; }
+        nav a { text-decoration: none; color: #475569; font-weight: 500; display: block; padding: 0.4rem 0.6rem; border-radius: 6px; transition: 0.2s; }
+        nav a:hover { background: #eff6ff; color: var(--primary); }
+        main { margin-left: 280px; padding: 3rem 4rem; max-width: 900px; width: 100%; }
+        h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; color: #0f172a; }
+        .subtitle { color: #64748b; margin-bottom: 2.5rem; font-size: 1.1rem; }
+        h2 { font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); color: #0f172a; }
+        h3 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; color: #334155; }
+        p { margin-bottom: 1rem; }
+        ul, ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+        li { margin-bottom: 0.3rem; }
+        pre { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1rem; font-family: monospace; font-size: 0.9rem; }
+        code { background: #f1f5f9; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; font-size: 0.9em; color: #b91c1c; }
+        pre code { background: transparent; padding: 0; color: inherit; }
+        
+        /* Acordeão para Troubleshooting */
+        details { background: #fff; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1rem; }
+        summary { padding: 1rem; font-weight: 600; cursor: pointer; background: #f8fafc; border-radius: 8px; list-style: none; display: flex; align-items: center; }
+        summary::-webkit-details-marker { display: none; }
+        summary::before { content: "▶"; margin-right: 0.75rem; font-size: 0.8rem; color: var(--primary); transition: transform 0.2s; }
+        details[open] summary::before { transform: rotate(90deg); }
+        details[open] summary { border-bottom: 1px solid var(--border); border-radius: 8px 8px 0 0; }
+        .details-content { padding: 1rem; }
+        .danger { color: var(--danger); font-weight: bold; }
+
+        @media (max-width: 768px) { body { flex-direction: column; } nav { position: relative; width: 100%; height: auto; } main { margin-left: 0; padding: 1.5rem; } }
+    </style>
+</head>
+<body>
+    <nav>
+        <h2>💻 Manual IT / DevOps</h2>
+        <ul>
+            <li><a href="#req">1. Requisitos de Hardware</a></li>
+            <li><a href="#install">2. Instalação Passo-a-Passo</a></li>
+            <li><a href="#troubleshoot">3. Troubleshooting (Erros)</a></li>
+            <li><a href="#backup-restore">4. Restaurar Backups</a></li>
+        </ul>
+    </nav>
+    <main>
+        <h1>LocalGRC</h1>
+        <p class="subtitle">Manual Técnico, Instalação e Troubleshooting</p>
+
+        <section id="req">
+            <h2>1. Requisitos de Hardware</h2>
+            <ul>
+                <li><strong>CPU:</strong> 2 Cores (mínimo), 4 Cores (recomendado).</li>
+                <li><strong>RAM:</strong> 4 GB (para correr o modelo de IA <code>llama3.2:1b</code>). Se quiseres usar modelos maiores (ex: <code>llama3.1:8b</code>), precisas de 8 GB ou mais.</li>
+                <li><strong>Disco:</strong> 20 GB de espaço livre.</li>
+                <li><strong>Software:</strong> Docker e Docker Compose instalados no servidor (Windows com WSL2, Linux ou macOS).</li>
+            </ul>
+        </section>
+
+        <section id="install">
+            <h2>2. Instalação Passo-a-Passo</h2>
+            <p>Executa estes comandos no terminal do servidor:</p>
+            <ol>
+                <li>Clona o repositório e entra na pasta:
+                    <pre><code>git clone https://github.com/mareginter/localgrc.git
+cd localgrc</code></pre>
+                </li>
+                <li>Cria o ficheiro de ambiente e configura os segredos:
+                    <pre><code>cp .env.example .env</code></pre>
+                    <em>Abre o <code>.env</code> e altera a <code>POSTGRES_PASSWORD</code> e a <code>DJANGO_SECRET_KEY</code>.</em>
+                </li>
+                <li>Constrói e levanta os contentores:
+                    <pre><code>docker compose up -d --build</code></pre>
+                </li>
+                <li>Inicializa a base de dados e cria o admin:
+                    <pre><code>docker compose exec app python manage.py migrate
+docker compose exec app python manage.py bootstrap</code></pre>
+                </li>
+                <li>Descarrega os modelos de IA:
+                    <pre><code>docker compose exec ollama ollama pull llama3.2:1b
+docker compose exec ollama ollama pull nomic-embed-text</code></pre>
+                </li>
+            </ol>
+        </section>
+
+        <section id="troubleshoot">
+            <h2>3. Troubleshooting (Erros Comuns)</h2>
+            
+            <details>
+                <summary>Erro 502 Bad Gateway no Browser</summary>
+                <div class="details-content">
+                    <p><span class="danger">Sintoma:</span> O browser mostra "502 Bad Gateway".</p>
+                    <p><strong>Causa:</strong> O Nginx não consegue falar com o Django (o contentor <code>app</code> falhou ou está em loop de reinício).</p>
+                    <p><strong>Solução:</strong></p>
+                    <ol>
+                        <li>Vê os logs do Django: <code>docker compose logs app --tail 50</code></li>
+                        <li>Se houver um <code>Traceback</code> (erro de Python), corrige o ficheiro e corre:
+                            <pre><code>docker compose up -d --build app</code></pre>
+                        </li>
+                        <li>Se for apenas o Nginx com cache do IP antigo:
+                            <pre><code>docker compose restart web</code></pre>
+                        </li>
+                    </ol>
+                </div>
+            </details>
+
+            <details>
+                <summary>Erro 500 Internal Server Error</summary>
+                <div class="details-content">
+                    <p><span class="danger">Sintoma:</span> A página carrega mas mostra erro 500 (sem detalhes).</p>
+                    <p><strong>Causa:</strong> O Django crashou ao processar a view (ex: falta de tabela na base de dados ou Template em falta).</p>
+                    <p><strong>Solução:</strong></p>
+                    <ol>
+                        <li>Muda <code>DJANGO_DEBUG=true</code> no ficheiro <code>.env</code>.</li>
+                        <li>Reinicia o Django: <code>docker compose restart app</code>.</li>
+                        <li>Abre a página no browser para ver o erro exato (ficará amarelo).</li>
+                        <li>Se for <code>ProgrammingError: relation does not exist</code>, aplica as migrações:
+                            <pre><code>docker compose exec app python manage.py makemigrations
+docker compose exec app python manage.py migrate</code></pre>
+                        </li>
+                    </ol>
+                </div>
+            </details>
+
+            <details>
+                <summary>Erro de Permissão (Permission denied)</summary>
+                <div class="details-content">
+                    <p><span class="danger">Sintoma:</span> Uploads de PDFs falham ou a app não consegue gravar ficheiros.</p>
+                    <p><strong>Causa:</strong> O Docker criou as pastas do volume como <code>root</code>, mas o Django corre como utilizador <code>app</code>.</p>
+                    <p><strong>Solução:</strong> Corrige as permissões da pasta de uploads:</p>
+                    <pre><code>docker compose exec --user root app chown -R app:app /data/uploads</code></pre>
+                </div>
+            </details>
+
+            <details>
+                <summary>O Assistente AI diz que o modelo não está instalado</summary>
+                <div class="details-content">
+                    <p><span class="danger">Sintoma:</span> Na tab Assistant, aparece um aviso vermelho ou amarelo sobre o Ollama.</p>
+                    <p><strong>Solução:</strong> Descarrega o modelo manualmente:
+                        <pre><code>docker compose exec ollama ollama pull llama3.2:1b
+docker compose exec ollama ollama pull nomic-embed-text</code></pre>
+                    </p>
+                    <p><em>Nota:</em> Se o modelo descarregar mas falhar com "Out of Memory", o teu servidor não tem RAM suficiente. Muda para o modelo <code>qwen2.5:0.5b</code> no ficheiro <code>.env</code>.</p>
+                </div>
+            </details>
+        </section>
+
+        <section id="backup-restore">
+            <h2>4. Restaurar Backups (Disaster Recovery)</h2>
+            <p>Os backups automáticos são guardados na pasta <code>/backups</code> do servidor (fora do Docker). Se precisares de restaurar um desastre:</p>
+            
+            <h3>Restaurar a Base de Dados (PostgreSQL)</h3>
+            <pre><code># O ficheiro .dump tem de estar na pasta backups/
+docker compose exec -T db pg_restore -U localgrc -d localgrc < backups/db_YYYYMMDD_HHMMSS.dump</code></pre>
+
+            <h3>Restaurar os Ficheiros (PDFs e Evidências)</h3>
+            <pre><code># Extrai o ficheiro tar.gz para dentro do volume de uploads
+docker compose exec -T app tar -xzf /backups/uploads_YYYYMMDD_HHMMSS.tar.gz -C /data/uploads/</code></pre>
+        </section>
+    </main>
+</body>
+</html>

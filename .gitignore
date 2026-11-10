@@ -16,3 +16,7 @@ htmlcov/
 *.bak
 
 backups/
+
+.pdf-backup-*
+
+.templates-backup-*
