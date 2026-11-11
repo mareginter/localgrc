@@ -35,6 +35,7 @@
         <form method="post" action="{% url 'control_transition' control.pk %}" style="margin:0;">
           {% csrf_token %}
           <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
+          <input type="text" name="comment" placeholder="Comment" {% if t.requires_comment %}required{% endif %} style="width:150px;padding:0.35rem 0.5rem;font-size:0.85rem;">
           <button type="submit" class="btn btn-primary btn-sm">Move to {{ t.to_state.label }}</button>
         </form>
       {% endfor %}

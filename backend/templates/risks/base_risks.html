@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block content %}
 <style>
   .topbar {
@@ -37,6 +37,11 @@
     color: var(--c-text-muted); text-decoration: none; border-radius: var(--radius);
   }
   .topbar-admin:hover { background: #f3f4f6; color: var(--c-text); text-decoration: none; }
+  .topbar-account { margin-left:auto; display:flex; align-items:center; gap:.65rem; }
+  .topbar-user { color:var(--c-text-muted); font-size:.8rem; white-space:nowrap; }
+  .topbar-logout { padding:.38rem .7rem; font-size:.8rem; border:1px solid var(--c-border-strong); background:#fff; color:var(--c-text); }
+  .topbar-logout:hover { background:#f3f4f6; }
+  .topbar-account form { margin:0; }
   .main-wrap { max-width: 1800px; margin: 0 auto; padding: 2rem; }
   @media (max-width: 700px) {
     .topbar-inner { padding: 0 1rem; }
@@ -66,7 +71,29 @@
       <a href="{% url 'assistant_home' %}" class="{% if '/assistant/' in request.path %}active{% endif %}">Assistant</a>
       <a href="{% url 'user_list' %}" class="{% if '/users/' in request.path %}active{% endif %}">Team</a>
     </nav>
-    <a href="/admin/" class="topbar-admin">Admin</a>
+    {% if available_organizations|length > 1 %}
+      <form method="post" action="{% url 'organization_switch' %}" style="margin-left:auto;display:flex;align-items:center;gap:.4rem;max-width:260px">
+        {% csrf_token %}
+        <label for="active-org" class="muted" style="font-size:.78rem;white-space:nowrap">Organization</label>
+        <select id="active-org" name="organization_id" onchange="this.form.submit()" style="padding:.35rem .5rem;font-size:.82rem">
+          {% for org_option in available_organizations %}
+            <option value="{{ org_option.pk }}" {% if active_organization.pk == org_option.pk %}selected{% endif %}>{{ org_option.name }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    {% elif active_organization %}
+      <span class="topbar-admin">{{ active_organization.name }}</span>
+    {% endif %}
+    <div class="topbar-account">
+      {% if request.user.is_authenticated %}
+        <span class="topbar-user">{{ request.user.get_full_name|default:request.user.email }}</span>
+        {% if request.user.is_superuser %}<a href="/admin/" class="topbar-admin">Admin</a>{% endif %}
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="topbar-logout">Terminar sessão</button>
+        </form>
+      {% endif %}
+    </div>
   </div>
 </header>
 

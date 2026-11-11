@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from apps.controls.models import Control, ControlRequirement
 from apps.core.models import Organization
@@ -47,11 +47,14 @@ SAMPLE_CONTROLS = [
 class Command(BaseCommand):
     help = "Seed sample controls mapped to ISO 27001 requirements. Idempotent."
 
+    def add_arguments(self, parser):
+        parser.add_argument("--organization", required=True, help="Organization slug to seed.")
+
     def handle(self, *args, **opts):
-        org = Organization.objects.first()
-        if not org:
-            self.stdout.write(self.style.ERROR("No organization found."))
-            return
+        try:
+            org = Organization.objects.get(slug=opts["organization"])
+        except Organization.DoesNotExist as exc:
+            raise CommandError("Organization not found. Provide a valid --organization slug.") from exc
 
         iso_version = FrameworkVersion.objects.filter(
             framework__organization=org, framework__code="iso27001", is_active=True

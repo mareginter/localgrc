@@ -10,31 +10,45 @@ from .models import AuditLog
 
 
 def _serialize(instance):
-    """Convert any model instance into a JSON-safe dict.
-
-    Handles: None, str, int, float, bool, UUID, datetime, date, Decimal,
-    FieldFile (converted to its name), and any other value (converted
-    to str() as a last resort).
-    """
+    """Convert a model instance into a JSON-safe snapshot."""
     from decimal import Decimal
 
-    def _safe(v):
-        if v is None:
+    def _safe(value):
+        if value is None:
             return None
-        if isinstance(v, (str, int, float, bool)):
-            return v
-        if isinstance(v, (uuid.UUID, datetime.datetime, datetime.date, Decimal)):
-            return str(v)
+        if isinstance(value, (str, int, float, bool)):
+            return value
+        if isinstance(
+            value,
+            (uuid.UUID, datetime.datetime, datetime.date, Decimal),
+        ):
+            return str(value)
         try:
-            return str(v)
+            return str(value)
         except Exception:
-            return repr(v)
+            return repr(value)
 
-    data = {}
-    for field in instance._meta.fields:
-        value = getattr(instance, field.attname, None)
-        data[field.name] = _safe(value)
-    return data
+    return {
+        field.name: _safe(getattr(instance, field.attname, None))
+        for field in instance._meta.fields
+    }
+
+
+def _diff(before, after, sender):
+    """Compare business fields, excluding fields changed automatically on save.
+
+    Full before/after snapshots retain timestamps for audit traceability.
+    """
+    automatic_fields = {
+        field.name
+        for field in sender._meta.fields
+        if getattr(field, "auto_now", False)
+    }
+    return {
+        key: {"before": before.get(key), "after": after[key]}
+        for key in after
+        if key not in automatic_fields and before.get(key) != after[key]
+    }
 
 
 def _org_id(instance):
@@ -50,12 +64,23 @@ def _auditable(sender):
     )
 
 
+def _audit_actor_and_request():
+    request = get_current_request()
+    user = get_current_user()
+    if not getattr(user, "is_authenticated", False):
+        user = None
+    return request, user
+
+
 @receiver(pre_save)
 def audit_pre_save(sender, instance, **kwargs):
     if not _auditable(sender) or not instance.pk:
         return
+
     try:
-        instance._audit_before = _serialize(sender.all_objects.get(pk=instance.pk))
+        instance._audit_before = _serialize(
+            sender.all_objects.get(pk=instance.pk)
+        )
     except sender.DoesNotExist:
         instance._audit_before = None
 
@@ -64,26 +89,31 @@ def audit_pre_save(sender, instance, **kwargs):
 def audit_post_save(sender, instance, created, **kwargs):
     if not _auditable(sender):
         return
+
     if not created and not getattr(instance, "_audit_before", None):
         return
+
     after = _serialize(instance)
     before = None if created else instance._audit_before
     diff = None
+
     if before is not None:
-        diff = {k: {"before": before[k], "after": after[k]}
-                for k in after if before.get(k) != after[k]}
+        diff = _diff(before, after, sender)
         if not diff:
             return
-    request = get_current_request()
+
+    request, actor = _audit_actor_and_request()
     AuditLog.objects.create(
         organization_id=_org_id(instance),
-        actor=get_current_user() if getattr(get_current_user(), "is_authenticated", False) else None,
+        actor=actor,
         action=AuditLog.ACTION_CREATE if created else AuditLog.ACTION_UPDATE,
         entity_type=f"{sender._meta.app_label}.{sender._meta.model_name}",
         entity_id=instance.pk,
-        before=before, after=after, diff=diff,
-        ip=(request.META.get("REMOTE_ADDR") if request else None),
-        user_agent=(request.META.get("HTTP_USER_AGENT", "") if request else ""),
+        before=before,
+        after=after,
+        diff=diff,
+        ip=request.META.get("REMOTE_ADDR") if request else None,
+        user_agent=request.META.get("HTTP_USER_AGENT", "") if request else "",
     )
 
 
@@ -91,14 +121,15 @@ def audit_post_save(sender, instance, created, **kwargs):
 def audit_post_delete(sender, instance, **kwargs):
     if not _auditable(sender):
         return
-    request = get_current_request()
+
+    request, actor = _audit_actor_and_request()
     AuditLog.objects.create(
         organization_id=_org_id(instance),
-        actor=get_current_user() if getattr(get_current_user(), "is_authenticated", False) else None,
+        actor=actor,
         action=AuditLog.ACTION_DELETE,
         entity_type=f"{sender._meta.app_label}.{sender._meta.model_name}",
         entity_id=instance.pk,
         before=_serialize(instance),
-        ip=(request.META.get("REMOTE_ADDR") if request else None),
-        user_agent=(request.META.get("HTTP_USER_AGENT", "") if request else ""),
+        ip=request.META.get("REMOTE_ADDR") if request else None,
+        user_agent=request.META.get("HTTP_USER_AGENT", "") if request else "",
     )

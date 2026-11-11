@@ -1,13 +1,13 @@
+from apps.core.access import get_active_organization
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 
-from apps.core.models import Organization
 
 from .models import Framework, FrameworkVersion, Requirement
 
 
 def _org(request):
-    return Organization.objects.first()
+    return get_active_organization(request)
 
 
 @login_required
@@ -39,7 +39,10 @@ def framework_detail(request, pk):
 
 @login_required
 def requirement_detail(request, pk):
-    requirement = get_object_or_404(Requirement, pk=pk)
+    org = _org(request)
+    requirement = get_object_or_404(
+        Requirement, pk=pk, framework_version__framework__organization=org
+    )
     return render(request, "frameworks/requirement_detail.html", {
         "requirement": requirement,
     })

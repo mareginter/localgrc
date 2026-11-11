@@ -23,3 +23,17 @@ class AuditActorMiddleware:
         finally:
             _thread_locals.user = None
             _thread_locals.request = None
+
+
+class SuperuserOnlyAdminMiddleware:
+    """Keep Django's global administration surface out of tenant-admin hands."""
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.path.startswith("/admin/"):
+            user = getattr(request, "user", None)
+            if user and user.is_authenticated and not user.is_superuser:
+                from django.http import HttpResponseForbidden
+                return HttpResponseForbidden("Django administration is restricted to platform superusers.")
+        return self.get_response(request)

@@ -28,4 +28,4 @@ USER app
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && python manage.py bootstrap && gunicorn localgrc.wsgi:application --bind 0.0.0.0:8000 --workers 3 --worker-class gthread --threads 4 --timeout 300 --graceful-timeout 30 --keep-alive 5 --worker-tmp-dir /dev/shm --capture-output --error-logfile - --access-logfile -"]
+CMD ["sh", "-c", "python manage.py migrate --fake-initial --noinput && python manage.py collectstatic --noinput && python manage.py bootstrap && gunicorn localgrc.wsgi:application --bind 0.0.0.0:8000 --workers 3 --worker-class gthread --threads 4 --timeout 300 --graceful-timeout 30 --keep-alive 5 --worker-tmp-dir /dev/shm --capture-output --error-logfile - --access-logfile -"]

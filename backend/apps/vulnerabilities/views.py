@@ -1,4 +1,5 @@
-﻿from django.shortcuts import render, redirect, get_object_or_404
+from apps.core.access import get_active_organization, require_org_roles
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count
@@ -8,7 +9,8 @@ from .forms import VulnerabilityForm
 
 @login_required
 def vuln_list(request):
-    qs = Vulnerability.objects.all().select_related('owner').order_by('-discovered_at')
+    organization = get_active_organization(request)
+    qs = Vulnerability.objects.filter(organization=organization).select_related('owner').order_by('-discovered_at')
     
     # Filtros
     severity = request.GET.get('severity', '')
@@ -30,7 +32,8 @@ def vuln_list(request):
 
 @login_required
 def vuln_dashboard(request):
-    qs = Vulnerability.objects.all()
+    organization = get_active_organization(request)
+    qs = Vulnerability.objects.filter(organization=organization)
     
     # MÃ©tricas
     critical_count = qs.filter(severity='critical', status__in=['open', 'in_progress']).count()
@@ -53,22 +56,29 @@ def vuln_dashboard(request):
 
 @login_required
 def vuln_detail(request, pk):
-    vuln = get_object_or_404(Vulnerability, pk=pk)
+    organization = get_active_organization(request)
+    vuln = get_object_or_404(Vulnerability, pk=pk, organization=organization)
     return render(request, "vulnerabilities/detail.html", {"vuln": vuln})
 
 @login_required
+@require_org_roles("admin")
 def vuln_create(request):
-    form = VulnerabilityForm(request.POST or None)
+    organization = get_active_organization(request)
+    form = VulnerabilityForm(request.POST or None, organization=organization)
     if request.method == "POST" and form.is_valid():
-        form.save()
+        vulnerability = form.save(commit=False)
+        vulnerability.organization = organization
+        vulnerability.save()
         messages.success(request, "Vulnerability logged successfully.")
         return redirect("vuln_list")
     return render(request, "vulnerabilities/form.html", {"form": form, "action": "Log New Vulnerability"})
 
 @login_required
+@require_org_roles("admin")
 def vuln_update(request, pk):
-    vuln = get_object_or_404(Vulnerability, pk=pk)
-    form = VulnerabilityForm(request.POST or None, instance=vuln)
+    organization = get_active_organization(request)
+    vuln = get_object_or_404(Vulnerability, pk=pk, organization=organization)
+    form = VulnerabilityForm(request.POST or None, instance=vuln, organization=organization)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Vulnerability updated.")

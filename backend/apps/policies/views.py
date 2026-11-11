@@ -1,37 +1,21 @@
+from apps.core.access import get_active_organization, require_org_roles
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.http import Http404
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_GET
 
-from apps.core.models import Organization, WorkflowDefinition, WorkflowInstance
+from apps.core.workflows import get_workflow_instance, get_workflow_transitions
+from apps.core.downloads import internal_file_download
 
 from .forms import PolicyApprovalForm, PolicyForm, PolicyVersionForm
-from .models import Policy
+from .models import Policy, PolicyVersion
 
 
 def _org(request):
-    return Organization.objects.first()
-
-
-def _workflow_instance(policy, org):
-    ct = ContentType.objects.get_for_model(Policy)
-    try:
-        return WorkflowInstance.objects.get(content_type=ct, object_id=policy.pk)
-    except WorkflowInstance.DoesNotExist:
-        definition = WorkflowDefinition.objects.filter(
-            organization_id=org.pk, content_type=ct, is_default=True
-        ).first()
-        if not definition:
-            return None
-        state = definition.states.filter(code=policy.status).first() or definition.states.filter(code="draft").first()
-        if not state:
-            return None
-        return WorkflowInstance.objects.create(
-            definition=definition, content_type=ct,
-            object_id=policy.pk, current_state=state,
-        )
+    return get_active_organization(request)
 
 
 @login_required
@@ -59,22 +43,24 @@ def policy_list(request):
 def policy_detail(request, pk):
     org = _org(request)
     policy = get_object_or_404(Policy, pk=pk, organization=org)
-    instance = _workflow_instance(policy, org)
-    transitions = list(instance.current_state.outgoing.select_related("to_state").all()) if instance else []
+    transitions = get_workflow_transitions(
+        policy, org, status=policy.status, fallback_states=("draft",)
+    )
     return render(request, "policies/detail.html", {
         "policy": policy,
         "versions": policy.versions.all(),
         "current_version": policy.current_version,
         "transitions": transitions,
-        "version_form": PolicyVersionForm(),
-        "approval_form": PolicyApprovalForm(),
+        "version_form": PolicyVersionForm(organization=org),
+        "approval_form": PolicyApprovalForm(organization=org),
     })
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager')
 def policy_create(request):
     org = _org(request)
-    form = PolicyForm(request.POST or None)
+    form = PolicyForm(request.POST or None, organization=org)
     if request.method == "POST" and form.is_valid():
         policy = form.save(commit=False)
         policy.organization = org
@@ -85,10 +71,11 @@ def policy_create(request):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager')
 def policy_update(request, pk):
     org = _org(request)
     policy = get_object_or_404(Policy, pk=pk, organization=org)
-    form = PolicyForm(request.POST or None, instance=policy)
+    form = PolicyForm(request.POST or None, instance=policy, organization=org)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Policy updated.")
@@ -99,10 +86,11 @@ def policy_update(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager')
 def version_create(request, pk):
     org = _org(request)
     policy = get_object_or_404(Policy, pk=pk, organization=org)
-    form = PolicyVersionForm(request.POST, request.FILES)
+    form = PolicyVersionForm(request.POST, request.FILES, organization=org)
     if form.is_valid():
         v = form.save(commit=False)
         v.policy = policy
@@ -114,13 +102,14 @@ def version_create(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager')
 def policy_approve(request, pk):
     org = _org(request)
     policy = get_object_or_404(Policy, pk=pk, organization=org)
     if not policy.current_version:
         messages.error(request, "Set a current version before recording approvals.")
         return redirect("policy_detail", pk=policy.pk)
-    form = PolicyApprovalForm(request.POST)
+    form = PolicyApprovalForm(request.POST, organization=org)
     if form.is_valid():
         appr = form.save(commit=False)
         appr.policy_version = policy.current_version
@@ -133,6 +122,7 @@ def policy_approve(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager')
 def policy_transition(request, pk):
     from django.db import transaction
 
@@ -145,7 +135,10 @@ def policy_transition(request, pk):
     if not to_code:
         messages.error(request, "Missing target state.")
         return redirect("policy_detail", pk=policy.pk)
-    instance = _workflow_instance(policy, org)
+    instance = get_workflow_instance(
+        policy, org, status=policy.status,
+        fallback_states=("draft",), create=True,
+    )
     if not instance:
         messages.error(request, "No workflow definition. Run seed_policy_workflow.")
         return redirect("policy_detail", pk=policy.pk)
@@ -168,6 +161,8 @@ def policy_transition(request, pk):
         messages.success(request, f"Policy moved to {to_state.label}.")
     except PermissionDenied as e:
         messages.error(request, str(e))
+    except ValidationError as e:
+        messages.error(request, "; ".join(e.messages))
     except Exception as e:
         import logging
         logging.getLogger("django.request").exception("policy_transition failed")
@@ -178,3 +173,13 @@ def policy_transition(request, pk):
 def dj_timezone_now():
     from django.utils import timezone
     return timezone.now()
+
+@login_required
+@require_GET
+def policy_version_download(request, pk, version_pk):
+    organization = _org(request)
+    policy = get_object_or_404(Policy, pk=pk, organization=organization)
+    version = get_object_or_404(PolicyVersion, pk=version_pk, policy=policy)
+    if not version.file_attachment:
+        raise Http404("This policy version has no attached file.")
+    return internal_file_download(version.file_attachment)

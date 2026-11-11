@@ -1,38 +1,19 @@
+from apps.core.access import get_active_organization, require_org_roles
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone as dj_timezone
 
-from apps.core.models import Organization, WorkflowDefinition, WorkflowInstance
+from apps.core.workflows import get_workflow_instance, get_workflow_transitions
 
 from .forms import VendorAssessmentForm, VendorControlForm, VendorForm, VendorRiskForm
 from .models import Vendor
 
 
 def _org(request):
-    return Organization.objects.first()
-
-
-def _workflow_instance(vendor, org):
-    ct = ContentType.objects.get_for_model(Vendor)
-    try:
-        return WorkflowInstance.objects.get(content_type=ct, object_id=vendor.pk)
-    except WorkflowInstance.DoesNotExist:
-        definition = WorkflowDefinition.objects.filter(
-            organization_id=org.pk, content_type=ct, is_default=True
-        ).first()
-        if not definition:
-            return None
-        state = definition.states.filter(code=vendor.status).first() or definition.states.filter(code="active").first()
-        if not state:
-            return None
-        return WorkflowInstance.objects.create(
-            definition=definition, content_type=ct,
-            object_id=vendor.pk, current_state=state,
-        )
+    return get_active_organization(request)
 
 
 @login_required
@@ -57,24 +38,26 @@ def vendor_list(request):
 def vendor_detail(request, pk):
     org = _org(request)
     vendor = get_object_or_404(Vendor, pk=pk, organization=org)
-    instance = _workflow_instance(vendor, org)
-    transitions = list(instance.current_state.outgoing.select_related("to_state").all()) if instance else []
+    transitions = get_workflow_transitions(
+        vendor, org, status=vendor.status, fallback_states=("active",)
+    )
     return render(request, "vendors/detail.html", {
         "vendor": vendor,
         "assessments": vendor.assessments.all(),
         "risk_links": vendor.risk_links.select_related("risk"),
         "control_links": vendor.control_links.select_related("control"),
         "transitions": transitions,
-        "assessment_form": VendorAssessmentForm(),
-        "risk_form": VendorRiskForm(),
-        "control_form": VendorControlForm(),
+        "assessment_form": VendorAssessmentForm(organization=org),
+        "risk_form": VendorRiskForm(organization=org),
+        "control_form": VendorControlForm(organization=org),
     })
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def vendor_create(request):
     org = _org(request)
-    form = VendorForm(request.POST or None)
+    form = VendorForm(request.POST or None, organization=org)
     if request.method == "POST" and form.is_valid():
         vendor = form.save(commit=False)
         vendor.organization = org
@@ -85,10 +68,11 @@ def vendor_create(request):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def vendor_update(request, pk):
     org = _org(request)
     vendor = get_object_or_404(Vendor, pk=pk, organization=org)
-    form = VendorForm(request.POST or None, instance=vendor)
+    form = VendorForm(request.POST or None, instance=vendor, organization=org)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Vendor updated.")
@@ -97,10 +81,11 @@ def vendor_update(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def assessment_create(request, pk):
     org = _org(request)
     vendor = get_object_or_404(Vendor, pk=pk, organization=org)
-    form = VendorAssessmentForm(request.POST)
+    form = VendorAssessmentForm(request.POST, organization=org)
     if form.is_valid():
         a = form.save(commit=False)
         a.vendor = vendor
@@ -113,10 +98,11 @@ def assessment_create(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def risk_link_create(request, pk):
     org = _org(request)
     vendor = get_object_or_404(Vendor, pk=pk, organization=org)
-    form = VendorRiskForm(request.POST)
+    form = VendorRiskForm(request.POST, organization=org)
     if form.is_valid():
         try:
             link = form.save(commit=False)
@@ -131,10 +117,11 @@ def risk_link_create(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def control_link_create(request, pk):
     org = _org(request)
     vendor = get_object_or_404(Vendor, pk=pk, organization=org)
-    form = VendorControlForm(request.POST)
+    form = VendorControlForm(request.POST, organization=org)
     if form.is_valid():
         try:
             link = form.save(commit=False)
@@ -151,6 +138,7 @@ def control_link_create(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def vendor_transition(request, pk):
     from django.db import transaction
     org = _org(request)
@@ -159,7 +147,13 @@ def vendor_transition(request, pk):
         return redirect("vendor_detail", pk=vendor.pk)
     to_code = request.POST.get("to_state", "").strip()
     comment = request.POST.get("comment", "").strip()
-    instance = _workflow_instance(vendor, org)
+    if not to_code:
+        messages.error(request, "Missing target state.")
+        return redirect("vendor_detail", pk=vendor.pk)
+    instance = get_workflow_instance(
+        vendor, org, status=vendor.status,
+        fallback_states=("active",), create=True,
+    )
     if not instance:
         messages.error(request, "No workflow. Run seed_vendor_workflow.")
         return redirect("vendor_detail", pk=vendor.pk)
@@ -175,6 +169,8 @@ def vendor_transition(request, pk):
         messages.success(request, f"Vendor moved to {to_state.label}.")
     except PermissionDenied as e:
         messages.error(request, str(e))
+    except ValidationError as e:
+        messages.error(request, "; ".join(e.messages))
     except Exception as e:
         messages.error(request, f"Transition failed: {e.__class__.__name__}: {e}")
     return redirect("vendor_detail", pk=vendor.pk)

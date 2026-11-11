@@ -1,9 +1,10 @@
+from apps.core.tenant_forms import TenantScopedModelFormMixin
 from django import forms
 
 from .models import Vendor, VendorAssessment, VendorControl, VendorRisk
 
 
-class VendorForm(forms.ModelForm):
+class VendorForm(TenantScopedModelFormMixin, forms.ModelForm):
     class Meta:
         model = Vendor
         fields = [
@@ -17,7 +18,7 @@ class VendorForm(forms.ModelForm):
         }
 
 
-class VendorAssessmentForm(forms.ModelForm):
+class VendorAssessmentForm(TenantScopedModelFormMixin, forms.ModelForm):
     class Meta:
         model = VendorAssessment
         fields = ["assessment_date", "score", "risk_rating", "findings_summary", "next_assessment_date"]
@@ -28,14 +29,14 @@ class VendorAssessmentForm(forms.ModelForm):
         }
 
 
-class VendorRiskForm(forms.ModelForm):
+class VendorRiskForm(TenantScopedModelFormMixin, forms.ModelForm):
     class Meta:
         model = VendorRisk
         fields = ["risk", "note"]
         widgets = {"note": forms.Textarea(attrs={"rows": 2})}
 
 
-class VendorControlForm(forms.ModelForm):
+class VendorControlForm(TenantScopedModelFormMixin, forms.ModelForm):
     class Meta:
         model = VendorControl
         fields = ["control", "verified", "notes"]

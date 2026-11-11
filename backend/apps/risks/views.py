@@ -1,3 +1,4 @@
+from apps.core.access import get_active_organization, require_org_roles
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -5,7 +6,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 
-from apps.core.models import Organization
 
 from .forms import AssessmentForm, AssetForm, RiskForm, TreatmentForm
 from .models import Asset, Risk
@@ -14,7 +14,7 @@ import weasyprint
 
 
 def _org(request):
-    return Organization.objects.first()
+    return get_active_organization(request)
 
 
 # -------------------- Risks --------------------
@@ -42,8 +42,8 @@ def risk_detail(request, pk):
     risk = get_object_or_404(Risk, pk=pk, organization=org)
     return render(request, "risks/detail.html", {
         "risk": risk,
-        "assessment_form": AssessmentForm(),
-        "treatment_form": TreatmentForm(),
+        "assessment_form": AssessmentForm(organization=org),
+        "treatment_form": TreatmentForm(organization=org),
     })
 
 
@@ -69,9 +69,10 @@ def risk_export_pdf(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def risk_create(request):
     org = _org(request)
-    form = RiskForm(request.POST or None)
+    form = RiskForm(request.POST or None, organization=org)
     if request.method == "POST" and form.is_valid():
         risk = form.save(commit=False)
         risk.organization = org
@@ -82,10 +83,11 @@ def risk_create(request):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def risk_update(request, pk):
     org = _org(request)
     risk = get_object_or_404(Risk, pk=pk, organization=org)
-    form = RiskForm(request.POST or None, instance=risk)
+    form = RiskForm(request.POST or None, instance=risk, organization=org)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Risk updated.")
@@ -125,9 +127,10 @@ def asset_list(request):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def asset_create(request):
     org = _org(request)
-    form = AssetForm(request.POST or None)
+    form = AssetForm(request.POST or None, organization=org)
     if request.method == "POST" and form.is_valid():
         a = form.save(commit=False)
         a.organization = org
@@ -140,10 +143,11 @@ def asset_create(request):
 # -------------------- Assessments & Treatments --------------------
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def assessment_create(request, pk):
     org = _org(request)
     risk = get_object_or_404(Risk, pk=pk, organization=org)
-    form = AssessmentForm(request.POST)
+    form = AssessmentForm(request.POST, organization=org)
     if form.is_valid():
         a = form.save(commit=False)
         a.risk = risk
@@ -156,10 +160,11 @@ def assessment_create(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def treatment_create(request, pk):
     org = _org(request)
     risk = get_object_or_404(Risk, pk=pk, organization=org)
-    form = TreatmentForm(request.POST)
+    form = TreatmentForm(request.POST, organization=org)
     if form.is_valid():
         t = form.save(commit=False)
         t.risk = risk

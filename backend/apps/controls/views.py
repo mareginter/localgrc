@@ -1,3 +1,4 @@
+from apps.core.access import get_active_organization, require_org_roles
 from collections import defaultdict
 import csv
 import weasyprint
@@ -8,10 +9,9 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import HttpResponse, Http404
 from django.template.loader import render_to_string
-from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 
-from apps.core.models import Organization, WorkflowDefinition, WorkflowInstance
+from apps.core.workflows import get_workflow_instance, get_workflow_transitions
 from apps.frameworks.models import Framework
 
 from .forms import ControlForm, ControlImplementationForm, ControlRequirementForm
@@ -19,7 +19,7 @@ from .models import Control, ControlRequirement
 
 
 def _org(request):
-    return Organization.objects.first()
+    return get_active_organization(request)
 
 
 def _build_coverage_data(org):
@@ -93,26 +93,24 @@ def control_detail(request, pk):
         "requirement", "requirement__framework_version__framework"
     )
     implementations = control.implementations.all()
-    instance = _get_or_create_workflow_instance(control, org)
-    transitions = []
-    if instance:
-        transitions = list(
-            instance.current_state.outgoing.select_related("to_state").all()
-        )
+    transitions = get_workflow_transitions(
+        control, org, status=control.status, fallback_states=("draft",)
+    )
     return render(request, "controls/detail.html", {
         "control": control,
         "requirements": requirements,
         "implementations": implementations,
-        "requirement_form": ControlRequirementForm(),
-        "implementation_form": ControlImplementationForm(),
+        "requirement_form": ControlRequirementForm(organization=org),
+        "implementation_form": ControlImplementationForm(organization=org),
         "transitions": transitions,
     })
 
 
 @login_required
+@require_org_roles('admin', 'control_owner', 'contributor')
 def control_create(request):
     org = _org(request)
-    form = ControlForm(request.POST or None)
+    form = ControlForm(request.POST or None, organization=org)
     if request.method == "POST" and form.is_valid():
         c = form.save(commit=False)
         c.organization = org
@@ -123,10 +121,11 @@ def control_create(request):
 
 
 @login_required
+@require_org_roles('admin', 'control_owner', 'contributor')
 def control_update(request, pk):
     org = _org(request)
     control = get_object_or_404(Control, pk=pk, organization=org)
-    form = ControlForm(request.POST or None, instance=control)
+    form = ControlForm(request.POST or None, instance=control, organization=org)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Control updated.")
@@ -135,10 +134,11 @@ def control_update(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'control_owner', 'contributor')
 def requirement_link_create(request, pk):
     org = _org(request)
     control = get_object_or_404(Control, pk=pk, organization=org)
-    form = ControlRequirementForm(request.POST)
+    form = ControlRequirementForm(request.POST, organization=org)
     if form.is_valid():
         link = form.save(commit=False)
         link.control = control
@@ -153,10 +153,11 @@ def requirement_link_create(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'control_owner', 'contributor')
 def implementation_create(request, pk):
     org = _org(request)
     control = get_object_or_404(Control, pk=pk, organization=org)
-    form = ControlImplementationForm(request.POST)
+    form = ControlImplementationForm(request.POST, organization=org)
     if form.is_valid():
         impl = form.save(commit=False)
         impl.control = control
@@ -230,36 +231,22 @@ def soa_export(request, framework_pk):
     return response
 
 
-def _get_or_create_workflow_instance(control, org):
-    ct = ContentType.objects.get_for_model(Control)
-    try:
-        return WorkflowInstance.objects.get(content_type=ct, object_id=control.pk)
-    except WorkflowInstance.DoesNotExist:
-        definition = WorkflowDefinition.objects.filter(
-            organization_id=org.pk, content_type=ct, is_default=True
-        ).first()
-        if not definition:
-            return None
-        state = definition.states.filter(code=control.status).first() or definition.states.filter(code="draft").first()
-        if not state:
-            return None
-        return WorkflowInstance.objects.create(
-            definition=definition, content_type=ct,
-            object_id=control.pk, current_state=state,
-        )
-
-
 @login_required
+@require_org_roles('admin', 'control_owner', 'contributor')
 def control_transition(request, pk):
     org = _org(request)
     control = get_object_or_404(Control, pk=pk, organization=org)
     if request.method != "POST":
         return redirect("control_detail", pk=control.pk)
     to_code = request.POST.get("to_state", "").strip()
+    comment = request.POST.get("comment", "").strip()
     if not to_code:
         messages.error(request, "Missing target state.")
         return redirect("control_detail", pk=control.pk)
-    instance = _get_or_create_workflow_instance(control, org)
+    instance = get_workflow_instance(
+        control, org, status=control.status,
+        fallback_states=("draft",), create=True,
+    )
     if not instance:
         messages.error(request, "No workflow definition for controls. Run seed_control_workflow.")
         return redirect("control_detail", pk=control.pk)
@@ -268,10 +255,17 @@ def control_transition(request, pk):
         messages.error(request, f"Invalid state '{to_code}'.")
         return redirect("control_detail", pk=control.pk)
     try:
-        instance.transition(request.user, to_state)
-        control.status = to_state.code
-        control.save(update_fields=["status", "updated_at"])
+        from django.db import transaction
+
+        with transaction.atomic():
+            instance.transition(request.user, to_state, comment=comment)
+            control.status = to_state.code
+            control.save(update_fields=["status", "updated_at"])
         messages.success(request, f"Control moved to {to_state.label}.")
     except PermissionDenied as e:
         messages.error(request, str(e))
+    except ValidationError as e:
+        messages.error(request, "; ".join(e.messages))
+    except Exception as e:
+        messages.error(request, f"Transition failed: {e.__class__.__name__}.")
     return redirect("control_detail", pk=control.pk)

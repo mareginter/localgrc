@@ -1,8 +1,8 @@
+from apps.core.access import get_active_organization, require_org_roles
 import weasyprint
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -10,43 +10,24 @@ from django.template.loader import render_to_string
 from django.utils import timezone as dj_timezone
 from django.db import transaction
 
-from apps.core.models import Organization, WorkflowDefinition, WorkflowInstance
+from apps.core.workflows import get_workflow_instance, get_workflow_transitions
 
 from .forms import AuditFindingForm, AuditForm, CorrectiveActionForm
 from .models import Audit, AuditFinding, CorrectiveAction
 
 
 def _org(request):
-    return Organization.objects.first()
+    return get_active_organization(request)
 
 
-def _get_workflow_instance(obj, model, status):
-    org = Organization.objects.first()
-    ct = ContentType.objects.get_for_model(model)
-    try:
-        return WorkflowInstance.objects.get(content_type=ct, object_id=obj.pk)
-    except WorkflowInstance.DoesNotExist:
-        definition = WorkflowDefinition.objects.filter(
-            organization_id=org.pk, content_type=ct, is_default=True
-        ).first()
-        if not definition:
-            return None
-        state = definition.states.filter(code=status).first()
-        if not state:
-            state = definition.states.filter(code="planned").first() or definition.states.order_by("order").first()
-        if not state:
-            return None
-        return WorkflowInstance.objects.create(
-            definition=definition, content_type=ct,
-            object_id=obj.pk, current_state=state,
-        )
-
-
-def _transitions_for(obj, model, status):
-    inst = _get_workflow_instance(obj, model, status)
-    if not inst:
-        return []
-    return list(inst.current_state.outgoing.select_related("to_state").all())
+def _transitions_for(obj, status, org):
+    return get_workflow_transitions(
+        obj,
+        org,
+        status=status,
+        fallback_states=("planned",),
+        fallback_first=True,
+    )
 
 
 # --- Audits ---
@@ -75,12 +56,12 @@ def audit_list(request):
 def audit_detail(request, pk):
     org = _org(request)
     audit = get_object_or_404(Audit, pk=pk, organization=org)
-    transitions = _transitions_for(audit, Audit, audit.status)
+    transitions = _transitions_for(audit, audit.status, org)
     return render(request, "audits/detail.html", {
         "audit": audit,
         "findings": audit.findings.all(),
         "transitions": transitions,
-        "finding_form": AuditFindingForm(),
+        "finding_form": AuditFindingForm(organization=org),
     })
 
 
@@ -104,9 +85,10 @@ def audit_export_pdf(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'auditor')
 def audit_create(request):
     org = _org(request)
-    form = AuditForm(request.POST or None)
+    form = AuditForm(request.POST or None, organization=org)
     if request.method == "POST" and form.is_valid():
         audit = form.save(commit=False)
         audit.organization = org
@@ -117,10 +99,11 @@ def audit_create(request):
 
 
 @login_required
+@require_org_roles('admin', 'auditor')
 def audit_update(request, pk):
     org = _org(request)
     audit = get_object_or_404(Audit, pk=pk, organization=org)
-    form = AuditForm(request.POST or None, instance=audit)
+    form = AuditForm(request.POST or None, instance=audit, organization=org)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Audit updated.")
@@ -129,6 +112,7 @@ def audit_update(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'auditor')
 def audit_transition(request, pk):
     org = _org(request)
     audit = get_object_or_404(Audit, pk=pk, organization=org)
@@ -136,7 +120,13 @@ def audit_transition(request, pk):
         return redirect("audit_detail", pk=audit.pk)
     to_code = request.POST.get("to_state", "").strip()
     comment = request.POST.get("comment", "").strip()
-    inst = _get_workflow_instance(audit, Audit, audit.status)
+    if not to_code:
+        messages.error(request, "Missing target state.")
+        return redirect("audit_detail", pk=audit.pk)
+    inst = get_workflow_instance(
+        audit, org, status=audit.status,
+        fallback_states=("planned",), fallback_first=True, create=True,
+    )
     if not inst:
         messages.error(request, "No workflow. Run seed_audit_workflows.")
         return redirect("audit_detail", pk=audit.pk)
@@ -152,6 +142,8 @@ def audit_transition(request, pk):
         messages.success(request, f"Audit moved to {to_state.label}.")
     except PermissionDenied as e:
         messages.error(request, str(e))
+    except ValidationError as e:
+        messages.error(request, "; ".join(e.messages))
     except Exception as e:
         messages.error(request, f"Transition failed: {e.__class__.__name__}: {e}")
     return redirect("audit_detail", pk=audit.pk)
@@ -159,10 +151,11 @@ def audit_transition(request, pk):
 
 # --- Findings ---
 @login_required
+@require_org_roles('admin', 'auditor')
 def finding_create(request, pk):
     org = _org(request)
     audit = get_object_or_404(Audit, pk=pk, organization=org)
-    form = AuditFindingForm(request.POST)
+    form = AuditFindingForm(request.POST, organization=org)
     if form.is_valid():
         f = form.save(commit=False)
         f.audit = audit
@@ -177,20 +170,21 @@ def finding_create(request, pk):
 def finding_detail(request, pk):
     org = _org(request)
     finding = get_object_or_404(AuditFinding, pk=pk, audit__organization=org)
-    transitions = _transitions_for(finding, AuditFinding, finding.status)
+    transitions = _transitions_for(finding, finding.status, org)
     return render(request, "audits/finding_detail.html", {
         "finding": finding,
         "actions": finding.corrective_actions.all(),
         "transitions": transitions,
-        "action_form": CorrectiveActionForm(),
+        "action_form": CorrectiveActionForm(organization=org),
     })
 
 
 @login_required
+@require_org_roles('admin', 'auditor')
 def finding_update(request, pk):
     org = _org(request)
     finding = get_object_or_404(AuditFinding, pk=pk, audit__organization=org)
-    form = AuditFindingForm(request.POST or None, instance=finding)
+    form = AuditFindingForm(request.POST or None, instance=finding, organization=org)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Finding updated.")
@@ -199,6 +193,7 @@ def finding_update(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'auditor')
 def finding_transition(request, pk):
     org = _org(request)
     finding = get_object_or_404(AuditFinding, pk=pk, audit__organization=org)
@@ -206,7 +201,13 @@ def finding_transition(request, pk):
         return redirect("finding_detail", pk=finding.pk)
     to_code = request.POST.get("to_state", "").strip()
     comment = request.POST.get("comment", "").strip()
-    inst = _get_workflow_instance(finding, AuditFinding, finding.status)
+    if not to_code:
+        messages.error(request, "Missing target state.")
+        return redirect("finding_detail", pk=finding.pk)
+    inst = get_workflow_instance(
+        finding, org, status=finding.status,
+        fallback_states=("planned",), fallback_first=True, create=True,
+    )
     if not inst:
         messages.error(request, "No workflow. Run seed_audit_workflows.")
         return redirect("finding_detail", pk=finding.pk)
@@ -222,6 +223,8 @@ def finding_transition(request, pk):
         messages.success(request, f"Finding moved to {to_state.label}.")
     except PermissionDenied as e:
         messages.error(request, str(e))
+    except ValidationError as e:
+        messages.error(request, "; ".join(e.messages))
     except Exception as e:
         messages.error(request, f"Transition failed: {e.__class__.__name__}: {e}")
     return redirect("finding_detail", pk=finding.pk)
@@ -229,10 +232,11 @@ def finding_transition(request, pk):
 
 # --- Corrective Actions ---
 @login_required
+@require_org_roles('admin', 'auditor')
 def action_create(request, pk):
     org = _org(request)
     finding = get_object_or_404(AuditFinding, pk=pk, audit__organization=org)
-    form = CorrectiveActionForm(request.POST)
+    form = CorrectiveActionForm(request.POST, organization=org)
     if form.is_valid():
         ca = form.save(commit=False)
         ca.finding = finding
@@ -244,6 +248,7 @@ def action_create(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'auditor')
 def action_verify(request, pk):
     org = _org(request)
     ca = get_object_or_404(CorrectiveAction, pk=pk, finding__audit__organization=org)

@@ -13,6 +13,7 @@ class DocumentTemplate(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    organization = models.ForeignKey("core.Organization", on_delete=models.CASCADE, related_name="document_templates", null=True, blank=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')

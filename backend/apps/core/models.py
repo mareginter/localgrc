@@ -266,51 +266,111 @@ class WorkflowInstance(models.Model):
         constraints = [models.UniqueConstraint(fields=["content_type", "object_id"], name="uniq_workflow_per_entity")]
         indexes = [models.Index(fields=["content_type", "object_id"])]
 
+    def _validate_transition_context(self, user, to_state):
+        from django.core.exceptions import PermissionDenied
+
+        if not getattr(user, "is_authenticated", False) or not getattr(user, "is_active", False):
+            raise PermissionDenied("Authentication is required to transition a workflow.")
+
+        if to_state is None or to_state.definition_id != self.definition_id:
+            raise PermissionDenied("The target state does not belong to this workflow.")
+        if self.current_state.definition_id != self.definition_id:
+            raise PermissionDenied("The current state does not belong to this workflow.")
+        if self.definition.content_type_id != self.content_type_id:
+            raise PermissionDenied("The workflow definition has an incompatible entity type.")
+        if self.definition.deleted_at is not None:
+            raise PermissionDenied("The workflow definition is inactive.")
+
+        entity = self.content_object
+        if entity is None:
+            raise PermissionDenied("The workflow target object no longer exists.")
+        if getattr(entity, "deleted_at", None) is not None:
+            raise PermissionDenied("A deleted object cannot change workflow state.")
+
+        from .workflows import _object_organization_id
+
+        organization_id = self.definition.organization_id
+        if _object_organization_id(entity) != organization_id:
+            raise PermissionDenied("The workflow target belongs to another organization.")
+        if not Organization.objects.filter(pk=organization_id, deleted_at__isnull=True).exists():
+            raise PermissionDenied("The workflow organization is not active.")
+
+        memberships = UserRole.objects.filter(
+            user=user,
+            organization_id=organization_id,
+            deleted_at__isnull=True,
+        )
+        # Tenant membership is mandatory for every user, including superusers.
+        if not memberships.exists():
+            raise PermissionDenied("The user is not a member of this organization.")
+
+        transition = self.definition.transitions.filter(
+            from_state=self.current_state,
+            to_state=to_state,
+        ).select_related("required_role").first()
+        if transition is None:
+            raise PermissionDenied("This workflow transition is not allowed.")
+
+        # A platform superuser bypasses the required role, never tenant or data
+        # integrity checks.
+        if not getattr(user, "is_superuser", False) and transition.required_role_id:
+            has_required_role = memberships.filter(
+                role_id=transition.required_role_id
+            ).exists()
+            has_admin_role = memberships.filter(role__code="admin").exists()
+            if not has_required_role and not has_admin_role:
+                raise PermissionDenied("The user does not have the role required for this transition.")
+
+        return transition
+
     def can_transition(self, user, to_state):
-        # Superusers always pass RBAC checks
-        if getattr(user, "is_superuser", False):
-            return self.definition.transitions.filter(
-                from_state=self.current_state, to_state=to_state
-            ).exists()
+        from django.core.exceptions import PermissionDenied
+
         try:
-            transition = self.definition.transitions.get(from_state=self.current_state, to_state=to_state)
-        except WorkflowTransition.DoesNotExist:
+            self._validate_transition_context(user, to_state)
+        except (PermissionDenied, AttributeError, ValueError):
             return False
-        if transition.required_role_id:
-            has_role = UserRole.objects.filter(
-                user=user, role=transition.required_role,
-                organization_id=self.definition.organization_id, deleted_at__isnull=True,
-            ).exists()
-            # Also allow users with the 'admin' role inside this org
-            if not has_role:
-                admin_role = Role.objects.filter(code="admin").first()
-                if admin_role and UserRole.objects.filter(
-                    user=user, role=admin_role,
-                    organization_id=self.definition.organization_id,
-                    deleted_at__isnull=True,
-                ).exists():
-                    has_role = True
-            if not has_role:
-                return False
         return True
 
     def transition(self, user, to_state, comment=""):
-        from django.core.exceptions import PermissionDenied
-        if not self.can_transition(user, to_state):
-            raise PermissionDenied(f"User {user.email} cannot transition to {to_state.code}")
-        old = self.current_state
-        self.current_state = to_state
-        self.save(update_fields=["current_state", "updated_at"])
-        AuditLog.objects.create(
-            organization_id=self.definition.organization_id,
-            actor=user,
-            action=AuditLog.ACTION_TRANSITION,
-            entity_type=f"{self.content_type.app_label}.{self.content_type.model}",
-            entity_id=self.object_id,
-            before={"state": old.code},
-            after={"state": to_state.code},
-            diff={"comment": comment} if comment else None,
-        )
+        from django.core.exceptions import PermissionDenied, ValidationError
+        from django.db import transaction
+
+        comment = (comment or "").strip()
+        with transaction.atomic():
+            try:
+                locked = (
+                    type(self).objects.select_for_update()
+                    .select_related("definition", "current_state", "content_type")
+                    .get(pk=self.pk)
+                )
+            except type(self).DoesNotExist:
+                raise PermissionDenied("The workflow instance no longer exists.")
+
+            transition = locked._validate_transition_context(user, to_state)
+            if transition.requires_comment and not comment:
+                raise ValidationError("A comment is required for this workflow transition.")
+
+            old_state = locked.current_state
+            locked.current_state = to_state
+            locked.save(update_fields=["current_state", "updated_at"])
+
+            AuditLog.objects.create(
+                organization_id=locked.definition.organization_id,
+                actor=user,
+                action=AuditLog.ACTION_TRANSITION,
+                entity_type=(
+                    f"{locked.content_type.app_label}.{locked.content_type.model}"
+                ),
+                entity_id=locked.object_id,
+                before={"state": old_state.code},
+                after={"state": to_state.code},
+                diff={"comment": comment} if comment else None,
+            )
+
+            # Keep the caller's object instance in sync with the locked row.
+            self.current_state = locked.current_state
+            self.updated_at = locked.updated_at
 
 
 class SystemSetting(BaseModel):

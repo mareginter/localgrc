@@ -1,3 +1,4 @@
+from apps.core.tenant_forms import TenantScopedModelFormMixin
 from django import forms
 from django.contrib.contenttypes.models import ContentType
 
@@ -14,7 +15,7 @@ TARGET_CHOICES = [
 ]
 
 
-class EvidenceForm(forms.ModelForm):
+class EvidenceForm(TenantScopedModelFormMixin, forms.ModelForm):
     target_type = forms.ChoiceField(choices=TARGET_CHOICES, label="Linked to (type)")
     target_id = forms.UUIDField(
         label="Linked to (UUID)",
@@ -38,9 +39,10 @@ class EvidenceForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        organization = kwargs.pop("organization", None)
         initial_target_type = kwargs.pop("initial_target_type", None)
         initial_target_id = kwargs.pop("initial_target_id", None)
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, organization=organization, **kwargs)
         if initial_target_type:
             self.fields["target_type"].initial = initial_target_type
         if initial_target_id:
@@ -61,10 +63,19 @@ class EvidenceForm(forms.ModelForm):
             try:
                 ct = ContentType.objects.get(app_label=app_label, model=model)
                 model_class = ct.model_class()
-                if not model_class.objects.filter(pk=target_id).exists():
-                    raise forms.ValidationError(
-                        f"{target_type} with UUID {target_id} not found."
-                    )
+                tenant_paths = {
+                    "controls.control": "organization",
+                    "risks.risktreatment": "risk__organization",
+                    "audits.auditfinding": "audit__organization",
+                    "audits.correctiveaction": "finding__audit__organization",
+                    "policies.policyversion": "policy__organization",
+                    "vendors.vendor": "organization",
+                }
+                lookup = tenant_paths.get(target_type)
+                if not model_class or not self.organization or not lookup or not model_class.objects.filter(
+                    pk=target_id, **{lookup: self.organization}
+                ).exists():
+                    raise forms.ValidationError("The selected target was not found or is not available in this organization.")
                 cleaned["_content_type"] = ct
             except ContentType.DoesNotExist:
                 raise forms.ValidationError(f"Invalid target type: {target_type}")

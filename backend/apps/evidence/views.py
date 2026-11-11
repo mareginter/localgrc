@@ -1,20 +1,23 @@
+from apps.core.access import get_active_organization, require_org_roles
+from apps.core.downloads import internal_file_download
 from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.db import models
 from django.utils import timezone as dj_timezone
+from django.views.decorators.http import require_GET
 
-from apps.core.models import Organization
 
 from .forms import EvidenceForm
 from .models import Evidence
 
 
 def _org(request):
-    return Organization.objects.first()
+    return get_active_organization(request)
 
 
 @login_required
@@ -50,6 +53,7 @@ def evidence_detail(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'control_owner', 'contributor')
 def evidence_create(request):
     org = _org(request)
     initial_target_type = request.GET.get("target_type")
@@ -58,6 +62,7 @@ def evidence_create(request):
         request.POST or None, request.FILES or None,
         initial_target_type=initial_target_type,
         initial_target_id=initial_target_id,
+        organization=org,
     )
     if request.method == "POST" and form.is_valid():
         evidence = form.save(commit=False)
@@ -73,10 +78,11 @@ def evidence_create(request):
 
 
 @login_required
+@require_org_roles('admin', 'control_owner', 'contributor')
 def evidence_update(request, pk):
     org = _org(request)
     evidence = get_object_or_404(Evidence, pk=pk, organization=org)
-    form = EvidenceForm(request.POST or None, request.FILES or None, instance=evidence)
+    form = EvidenceForm(request.POST or None, request.FILES or None, instance=evidence, organization=org)
     if request.method == "POST" and form.is_valid():
         evidence = form.save(commit=False)
         evidence.content_type = form.cleaned_data["_content_type"]
@@ -90,6 +96,7 @@ def evidence_update(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'control_owner', 'contributor')
 def evidence_verify(request, pk):
     org = _org(request)
     evidence = get_object_or_404(Evidence, pk=pk, organization=org)
@@ -117,3 +124,12 @@ def evidence_dashboard(request):
         "unverified": unverified,
         "total": all_ev.count(),
     })
+
+@login_required
+@require_GET
+def evidence_download(request, pk):
+    organization = _org(request)
+    evidence = get_object_or_404(Evidence, pk=pk, organization=organization)
+    if not evidence.attachment:
+        raise Http404("This evidence has no attached file.")
+    return internal_file_download(evidence.attachment)

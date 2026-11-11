@@ -52,13 +52,13 @@ def cosine_similarity(v1, v2):
     b = np.array(v2)
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-def search_context(query, top_k=3):
+def search_context(query, organization, top_k=3):
     from .models import DocumentChunk
     query_embedding = get_embedding(query)
     if not query_embedding:
         return ""
 
-    chunks = DocumentChunk.objects.all()
+    chunks = DocumentChunk.objects.filter(document__organization=organization)
     if not chunks:
         return ""
 

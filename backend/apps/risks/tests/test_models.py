@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from apps.core.models import Organization
+from apps.core.models import Organization, Role, UserRole
 from apps.risks.models import Risk, RiskAssessment
 
 User = get_user_model()
@@ -60,6 +60,13 @@ class RiskViewTests(TestCase):
     def setUp(self):
         self.org = Organization.objects.create(name="Test Org")
         self.user = User.objects.create_user(email="tester@local", password="password123")
+
+        UserRole.objects.create(
+            user=self.user,
+            role=Role.objects.get(code="admin"),
+            organization=self.org,
+        )
+
         self.client.force_login(self.user)
 
     def test_risk_list_view_status_code(self):

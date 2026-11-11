@@ -43,7 +43,7 @@
   {% endif %}
   {% if evidence.attachment %}
     <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--c-border);">
-      <strong>Attachment:</strong> <a href="{{ evidence.attachment.url }}" class="btn btn-neutral btn-sm" style="margin-left:0.5rem;">Download file</a>
+      <strong>Attachment:</strong> <a href="{% url 'evidence_download' evidence.pk %}" class="btn btn-neutral btn-sm" style="margin-left:0.5rem;">Download file</a>
     </div>
   {% endif %}
 </div>

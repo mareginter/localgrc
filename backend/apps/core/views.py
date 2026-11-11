@@ -19,11 +19,12 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import UserCreateForm, UserUpdateForm
 
-from .models import AuditLog, Organization
+from .models import AuditLog, Role, UserRole
+from .access import get_active_organization, require_org_roles, switch_organization as _switch_organization
 
 
 def _org(request):
-    return Organization.objects.first()
+    return get_active_organization(request)
 
 
 @login_required
@@ -187,32 +188,50 @@ def home(request):
 
 User = get_user_model()
 
-def is_admin(user):
-    return user.is_superuser or user.is_staff
-
 @login_required
-@user_passes_test(is_admin)
+@require_org_roles("admin")
 def user_list(request):
-    users = User.objects.all().order_by('first_name', 'email')
+    org = get_active_organization(request)
+    users = User.objects.filter(
+        user_roles__organization=org,
+        user_roles__deleted_at__isnull=True,
+    ).distinct().order_by("first_name", "email")
     return render(request, "core/user_list.html", {"users": users})
 
+
 @login_required
-@user_passes_test(is_admin)
+@require_org_roles("admin")
 def user_create(request):
+    org = get_active_organization(request)
     form = UserCreateForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "User created successfully.")
+        user = form.save()
+        contributor_role = Role.objects.get(code="contributor")
+        UserRole.objects.get_or_create(
+            user=user, role=contributor_role, organization=org,
+            defaults={"granted_by": request.user},
+        )
+        messages.success(request, "User created and assigned to this organization.")
         return redirect("user_list")
     return render(request, "core/user_form.html", {"form": form, "action": "Add new user"})
 
+
 @login_required
-@user_passes_test(is_admin)
+@require_org_roles("admin")
 def user_update(request, pk):
-    user_obj = get_object_or_404(User, pk=pk)
+    org = get_active_organization(request)
+    user_obj = get_object_or_404(
+        User.objects.filter(user_roles__organization=org, user_roles__deleted_at__isnull=True).distinct(),
+        pk=pk,
+    )
     form = UserUpdateForm(request.POST or None, instance=user_obj)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "User updated successfully.")
         return redirect("user_list")
     return render(request, "core/user_form.html", {"form": form, "action": f"Edit {user_obj.email}", "user_obj": user_obj})
+
+
+@login_required
+def organization_switch(request):
+    return _switch_organization(request)

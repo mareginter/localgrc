@@ -1,14 +1,26 @@
-﻿from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from apps.library.models import DocumentTemplate
+from apps.core.models import Organization
 
 class Command(BaseCommand):
     help = "Seeds the document library with sample GRC templates."
 
+    def add_arguments(self, parser):
+        parser.add_argument("--organization", required=True, help="Organization slug to seed.")
+
     def handle(self, *args, **kwargs):
+        try:
+            organization = Organization.objects.get(slug=kwargs["organization"])
+        except Organization.DoesNotExist as exc:
+            raise CommandError("Organization not found. Provide a valid --organization slug.") from exc
         User = get_user_model()
-        admin_user = User.objects.filter(is_superuser=True).first()
+        admin_user = User.objects.filter(
+            user_roles__organization=organization,
+            user_roles__role__code="admin",
+            user_roles__deleted_at__isnull=True,
+        ).distinct().first()
 
         self.stdout.write("A verificar e criar templates de exemplo...")
 
@@ -119,14 +131,15 @@ class Command(BaseCommand):
 
         count_created = 0
         for t in templates:
-            if DocumentTemplate.objects.filter(title=t["title"]).exists():
+            if DocumentTemplate.objects.filter(organization=organization, title=t["title"]).exists():
                 continue
 
             doc = DocumentTemplate(
                 title=t["title"],
                 description=t["description"],
                 category=t["category"],
-                uploaded_by=admin_user
+                uploaded_by=admin_user,
+                organization=organization,
             )
             doc.file.save(t["filename"], ContentFile(t["content"].encode("utf-8")))
             doc.save()

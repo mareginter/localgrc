@@ -1,3 +1,4 @@
+from apps.core.access import get_active_organization, require_org_roles
 import os
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -8,7 +9,8 @@ from .forms import DocumentTemplateForm
 
 @login_required
 def template_list(request):
-    templates = DocumentTemplate.objects.all().order_by('-uploaded_at')
+    organization = get_active_organization(request)
+    templates = DocumentTemplate.objects.filter(organization=organization).order_by('-uploaded_at')
     category = request.GET.get('category', '')
     if category:
         templates = templates.filter(category=category)
@@ -20,15 +22,14 @@ def template_list(request):
     })
 
 @login_required
+@require_org_roles("admin")
 def template_create(request):
-    if not request.user.is_staff:
-        messages.error(request, "Only administrators can upload templates.")
-        return redirect('template_list')
-
+    organization = get_active_organization(request)
     form = DocumentTemplateForm(request.POST or None, request.FILES or None)
     if request.method == "POST" and form.is_valid():
         doc = form.save(commit=False)
         doc.uploaded_by = request.user
+        doc.organization = organization
         doc.save()
         messages.success(request, "Template uploaded successfully.")
         return redirect("template_list")
@@ -36,7 +37,8 @@ def template_create(request):
 
 @login_required
 def template_download(request, pk):
-    template = get_object_or_404(DocumentTemplate, pk=pk)
+    organization = get_active_organization(request)
+    template = get_object_or_404(DocumentTemplate, pk=pk, organization=organization)
     if not template.file:
         messages.error(request, "This template has no file attached.")
         return redirect('template_list')

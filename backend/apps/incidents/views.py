@@ -1,12 +1,12 @@
+from apps.core.access import get_active_organization, require_org_roles
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone as dj_timezone
 
-from apps.core.models import Organization, WorkflowDefinition, WorkflowInstance
+from apps.core.workflows import get_workflow_instance, get_workflow_transitions
 
 from .forms import (
     IncidentAssetForm, IncidentForm, IncidentRiskForm, IncidentVendorForm,
@@ -18,26 +18,7 @@ from .models import (
 
 
 def _org(request):
-    return Organization.objects.first()
-
-
-def _workflow_instance(incident, org):
-    ct = ContentType.objects.get_for_model(Incident)
-    try:
-        return WorkflowInstance.objects.get(content_type=ct, object_id=incident.pk)
-    except WorkflowInstance.DoesNotExist:
-        definition = WorkflowDefinition.objects.filter(
-            organization_id=org.pk, content_type=ct, is_default=True
-        ).first()
-        if not definition:
-            return None
-        state = definition.states.filter(code=incident.status).first() or definition.states.filter(code="detected").first()
-        if not state:
-            return None
-        return WorkflowInstance.objects.create(
-            definition=definition, content_type=ct,
-            object_id=incident.pk, current_state=state,
-        )
+    return get_active_organization(request)
 
 
 @login_required
@@ -65,8 +46,9 @@ def incident_list(request):
 def incident_detail(request, pk):
     org = _org(request)
     incident = get_object_or_404(Incident, pk=pk, organization=org)
-    instance = _workflow_instance(incident, org)
-    transitions = list(instance.current_state.outgoing.select_related("to_state").all()) if instance else []
+    transitions = get_workflow_transitions(
+        incident, org, status=incident.status, fallback_states=("detected",)
+    )
     return render(request, "incidents/detail.html", {
         "incident": incident,
         "deadlines": incident.deadlines.all(),
@@ -75,16 +57,17 @@ def incident_detail(request, pk):
         "asset_links": incident.asset_links.select_related("asset"),
         "transitions": transitions,
         "deadline_form": RegulatoryDeadlineForm(),
-        "risk_form": IncidentRiskForm(),
-        "vendor_form": IncidentVendorForm(),
-        "asset_form": IncidentAssetForm(),
+        "risk_form": IncidentRiskForm(organization=org),
+        "vendor_form": IncidentVendorForm(organization=org),
+        "asset_form": IncidentAssetForm(organization=org),
     })
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def incident_create(request):
     org = _org(request)
-    form = IncidentForm(request.POST or None)
+    form = IncidentForm(request.POST or None, organization=org)
     if request.method == "POST" and form.is_valid():
         incident = form.save(commit=False)
         incident.organization = org
@@ -98,10 +81,11 @@ def incident_create(request):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def incident_update(request, pk):
     org = _org(request)
     incident = get_object_or_404(Incident, pk=pk, organization=org)
-    form = IncidentForm(request.POST or None, instance=incident)
+    form = IncidentForm(request.POST or None, instance=incident, organization=org)
     if request.method == "POST" and form.is_valid():
         form.save()
         ensure_regulatory_deadlines(incident)
@@ -111,6 +95,7 @@ def incident_update(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def incident_transition(request, pk):
     from django.db import transaction
     org = _org(request)
@@ -119,7 +104,13 @@ def incident_transition(request, pk):
         return redirect("incident_detail", pk=incident.pk)
     to_code = request.POST.get("to_state", "").strip()
     comment = request.POST.get("comment", "").strip()
-    instance = _workflow_instance(incident, org)
+    if not to_code:
+        messages.error(request, "Missing target state.")
+        return redirect("incident_detail", pk=incident.pk)
+    instance = get_workflow_instance(
+        incident, org, status=incident.status,
+        fallback_states=("detected",), create=True,
+    )
     if not instance:
         messages.error(request, "No workflow. Run seed_incident_workflow.")
         return redirect("incident_detail", pk=incident.pk)
@@ -139,12 +130,15 @@ def incident_transition(request, pk):
         messages.success(request, f"Incident moved to {to_state.label}.")
     except PermissionDenied as e:
         messages.error(request, str(e))
+    except ValidationError as e:
+        messages.error(request, "; ".join(e.messages))
     except Exception as e:
         messages.error(request, f"Transition failed: {e.__class__.__name__}: {e}")
     return redirect("incident_detail", pk=incident.pk)
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def deadline_create(request, pk):
     org = _org(request)
     incident = get_object_or_404(Incident, pk=pk, organization=org)
@@ -163,6 +157,7 @@ def deadline_create(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def deadline_mark_notified(request, pk):
     org = _org(request)
     deadline = get_object_or_404(RegulatoryDeadline, pk=pk, incident__organization=org)
@@ -175,10 +170,11 @@ def deadline_mark_notified(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def risk_link_create(request, pk):
     org = _org(request)
     incident = get_object_or_404(Incident, pk=pk, organization=org)
-    form = IncidentRiskForm(request.POST)
+    form = IncidentRiskForm(request.POST, organization=org)
     if form.is_valid():
         try:
             link = form.save(commit=False)
@@ -191,10 +187,11 @@ def risk_link_create(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def vendor_link_create(request, pk):
     org = _org(request)
     incident = get_object_or_404(Incident, pk=pk, organization=org)
-    form = IncidentVendorForm(request.POST)
+    form = IncidentVendorForm(request.POST, organization=org)
     if form.is_valid():
         try:
             link = form.save(commit=False)
@@ -207,10 +204,11 @@ def vendor_link_create(request, pk):
 
 
 @login_required
+@require_org_roles('admin', 'risk_manager', 'contributor')
 def asset_link_create(request, pk):
     org = _org(request)
     incident = get_object_or_404(Incident, pk=pk, organization=org)
-    form = IncidentAssetForm(request.POST)
+    form = IncidentAssetForm(request.POST, organization=org)
     if form.is_valid():
         try:
             link = form.save(commit=False)

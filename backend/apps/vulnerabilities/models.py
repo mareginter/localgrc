@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 from django.db import models
 from django.conf import settings
 
@@ -20,6 +20,7 @@ class Vulnerability(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    organization = models.ForeignKey("core.Organization", on_delete=models.CASCADE, related_name="vulnerabilities", null=True, blank=True)
     title = models.CharField(max_length=255)
     cve_id = models.CharField(max_length=50, blank=True, help_text="e.g., CVE-2023-1234")
     description = models.TextField(blank=True)

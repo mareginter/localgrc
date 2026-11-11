@@ -34,7 +34,7 @@
         <form method="post" action="{% url 'finding_transition' finding.pk %}" style="margin:0;display:flex;gap:0.5rem;">
           {% csrf_token %}
           <input type="hidden" name="to_state" value="{{ t.to_state.code }}">
-          <input type="text" name="comment" placeholder="Comment" style="width:150px;padding:0.35rem 0.5rem;font-size:0.85rem;">
+          <input type="text" name="comment" placeholder="Comment" {% if t.requires_comment %}required{% endif %} style="width:150px;padding:0.35rem 0.5rem;font-size:0.85rem;">
           <button type="submit" class="btn btn-primary btn-sm">Move to {{ t.to_state.label }}</button>
         </form>
       {% endfor %}

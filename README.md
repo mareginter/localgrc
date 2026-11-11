@@ -34,7 +34,7 @@ LocalGRC is designed for organizations and consultants who need a powerful GRC t
 - **Automated Backups**: Daily automated database and file backups to ensure you never lose your data.
 
 ### 👥 Administration
-- **Team Management**: Full RBAC (Role-Based Access Control). Create admins, staff, and standard users.
+- **Team Management**: Organization-scoped RBAC with defined roles for administrators, risk managers, auditors, contributors, control owners, and read-only users.
 - **Premium UI**: Modern, responsive, zero-build frontend (HTML/CSS) with dashboards, KPIs, and data visualization.
 
 ---

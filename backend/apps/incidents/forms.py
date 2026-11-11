@@ -1,9 +1,10 @@
+from apps.core.tenant_forms import TenantScopedModelFormMixin
 from django import forms
 
 from .models import Incident, IncidentAsset, IncidentRisk, IncidentVendor, RegulatoryDeadline
 
 
-class IncidentForm(forms.ModelForm):
+class IncidentForm(TenantScopedModelFormMixin, forms.ModelForm):
     class Meta:
         model = Incident
         fields = [
@@ -18,7 +19,7 @@ class IncidentForm(forms.ModelForm):
         }
 
 
-class RegulatoryDeadlineForm(forms.ModelForm):
+class RegulatoryDeadlineForm(TenantScopedModelFormMixin, forms.ModelForm):
     regulation = forms.ChoiceField(choices=RegulatoryDeadline.REGULATION_CHOICES)
 
     class Meta:
@@ -30,20 +31,20 @@ class RegulatoryDeadlineForm(forms.ModelForm):
         }
 
 
-class IncidentRiskForm(forms.ModelForm):
+class IncidentRiskForm(TenantScopedModelFormMixin, forms.ModelForm):
     class Meta:
         model = IncidentRisk
         fields = ["risk"]
 
 
-class IncidentVendorForm(forms.ModelForm):
+class IncidentVendorForm(TenantScopedModelFormMixin, forms.ModelForm):
     class Meta:
         model = IncidentVendor
         fields = ["vendor", "notes"]
         widgets = {"notes": forms.Textarea(attrs={"rows": 2})}
 
 
-class IncidentAssetForm(forms.ModelForm):
+class IncidentAssetForm(TenantScopedModelFormMixin, forms.ModelForm):
     class Meta:
         model = IncidentAsset
         fields = ["asset"]

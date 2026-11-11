@@ -1,9 +1,10 @@
+from apps.core.tenant_forms import TenantScopedModelFormMixin
 from django import forms
 
 from .models import Audit, AuditFinding, CorrectiveAction
 
 
-class AuditForm(forms.ModelForm):
+class AuditForm(TenantScopedModelFormMixin, forms.ModelForm):
     class Meta:
         model = Audit
         fields = [
@@ -19,14 +20,14 @@ class AuditForm(forms.ModelForm):
         }
 
 
-class AuditFindingForm(forms.ModelForm):
+class AuditFindingForm(TenantScopedModelFormMixin, forms.ModelForm):
     class Meta:
         model = AuditFinding
         fields = ["severity", "title", "description", "requirement", "control", "status"]
         widgets = {"description": forms.Textarea(attrs={"rows": 3})}
 
 
-class CorrectiveActionForm(forms.ModelForm):
+class CorrectiveActionForm(TenantScopedModelFormMixin, forms.ModelForm):
     class Meta:
         model = CorrectiveAction
         fields = ["description", "responsible", "due_date", "status"]

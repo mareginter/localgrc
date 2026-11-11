@@ -9,4 +9,5 @@ urlpatterns = [
     path("<uuid:pk>/", views.evidence_detail, name="evidence_detail"),
     path("<uuid:pk>/edit/", views.evidence_update, name="evidence_update"),
     path("<uuid:pk>/verify/", views.evidence_verify, name="evidence_verify"),
+    path("<uuid:pk>/download/", views.evidence_download, name="evidence_download"),
 ]

@@ -1,7 +1,8 @@
-﻿from django import forms
+from apps.core.tenant_forms import TenantScopedModelFormMixin
+from django import forms
 from .models import Vulnerability
 
-class VulnerabilityForm(forms.ModelForm):
+class VulnerabilityForm(TenantScopedModelFormMixin, forms.ModelForm):
     class Meta:
         model = Vulnerability
         fields = ['title', 'cve_id', 'description', 'affected_endpoint', 'cvss_score', 'severity', 'status', 'remediation_plan', 'due_date', 'owner']
