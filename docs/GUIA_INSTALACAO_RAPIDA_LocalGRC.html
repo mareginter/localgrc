@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Manual rápido de instalação, utilização e resolução de problemas do LocalGRC.">
+  <title>LocalGRC — Guia rápido de instalação e utilização</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #5d687b;
+      --line: #dce2ea;
+      --surface: #f4f6f9;
+      --blue: #174ea6;
+      --blue-soft: #eaf1fc;
+      --green: #176b48;
+      --amber: #81520b;
+      --code: #111827;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: #eef1f5;
+      color: var(--ink);
+      font: 15px/1.65 "Segoe UI", Arial, sans-serif;
+    }
+    .page {
+      width: min(1040px, calc(100% - 32px));
+      margin: 32px auto;
+      background: #fff;
+      border: 1px solid var(--line);
+      box-shadow: 0 12px 36px rgba(25, 39, 61, .08);
+    }
+    header {
+      padding: 48px 56px 38px;
+      color: #fff;
+      background: linear-gradient(125deg, #142b4d, #20569a);
+    }
+    .eyebrow {
+      margin: 0 0 10px;
+      color: #c9dcf7;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; font-size: clamp(30px, 5vw, 43px); line-height: 1.12; }
+    header p { max-width: 700px; margin: 16px 0 0; color: #e4edfa; font-size: 17px; }
+    .meta { margin-top: 25px; color: #d1def0; font-size: 13px; }
+    .layout { display: grid; grid-template-columns: 245px minmax(0, 1fr); }
+    nav {
+      padding: 30px 22px;
+      background: #f8f9fb;
+      border-right: 1px solid var(--line);
+    }
+    nav strong {
+      display: block;
+      margin: 0 0 12px;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    nav a {
+      display: block;
+      padding: 6px 8px;
+      border-radius: 5px;
+      color: #33435c;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    nav a:hover { background: var(--blue-soft); color: var(--blue); }
+    main { min-width: 0; padding: 34px 48px 56px; }
+    section { margin: 0 0 42px; scroll-margin-top: 18px; }
+    h2 {
+      margin: 0 0 16px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--line);
+      color: #173b6b;
+      font-size: 23px;
+      line-height: 1.3;
+    }
+    h3 { margin: 24px 0 9px; color: #243b5b; font-size: 17px; }
+    p { margin: 9px 0 13px; }
+    ul, ol { padding-left: 23px; }
+    li { margin: 5px 0; }
+    a { color: var(--blue); }
+    .note, .warning, .success {
+      margin: 17px 0;
+      padding: 13px 16px;
+      border-left: 4px solid var(--blue);
+      background: var(--blue-soft);
+      border-radius: 3px;
+    }
+    .warning { border-color: #b7791f; background: #fff7e8; }
+    .success { border-color: var(--green); background: #edf8f2; }
+    .note strong, .warning strong, .success strong { display: block; margin-bottom: 3px; }
+    table {
+      width: 100%;
+      margin: 14px 0 18px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td { padding: 10px 12px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #f2f5f9; color: #263b59; font-weight: 700; }
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #eef1f5;
+      color: #24364f;
+      font: .92em Consolas, "Courier New", monospace;
+      overflow-wrap: anywhere;
+    }
+    pre {
+      position: relative;
+      overflow-x: auto;
+      margin: 12px 0 18px;
+      padding: 15px 17px;
+      border-radius: 6px;
+      background: var(--code);
+      color: #e5edf8;
+      font: 13px/1.55 Consolas, "Courier New", monospace;
+      white-space: pre;
+    }
+    pre code { padding: 0; background: transparent; color: inherit; }
+    .small { color: var(--muted); font-size: 13px; }
+    .checklist { list-style: none; padding-left: 0; }
+    .checklist li { position: relative; padding-left: 25px; }
+    .checklist li::before {
+      content: "□";
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--blue);
+      font-size: 17px;
+      font-weight: 700;
+    }
+    footer {
+      padding: 22px 48px;
+      border-top: 1px solid var(--line);
+      background: #f8f9fb;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    @media (max-width: 760px) {
+      .page { width: 100%; margin: 0; border: 0; }
+      header { padding: 34px 24px; }
+      .layout { display: block; }
+      nav { border-right: 0; border-bottom: 1px solid var(--line); padding: 20px 24px; }
+      nav a { display: inline-block; margin: 2px 4px 2px 0; }
+      main { padding: 28px 24px 42px; }
+      footer { padding: 20px 24px; }
+    }
+    @media print {
+      body { background: #fff; font-size: 11pt; }
+      .page { width: 100%; margin: 0; border: 0; box-shadow: none; }
+      header { padding: 25px 30px; print-color-adjust: exact; }
+      .layout { display: block; }
+      nav { display: none; }
+      main { padding: 25px 30px; }
+      section { break-inside: avoid; }
+      pre { white-space: pre-wrap; overflow-wrap: anywhere; print-color-adjust: exact; }
+      a { color: inherit; text-decoration: none; }
+      footer { padding: 15px 30px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="eyebrow">Documentação de instalação</p>
+    <h1>LocalGRC</h1>
+    <p>Guia rápido de instalação, utilização e resolução de problemas numa máquina Windows nova.</p>
+    <div class="meta">Versão do guia: 1.0 &nbsp;|&nbsp; Plataforma de referência: Windows 10/11 + Docker Desktop</div>
+  </header>
+
+  <div class="layout">
+    <nav aria-label="Índice do manual">
+      <strong>Índice</strong>
+      <a href="#requisitos">1. Requisitos</a>
+      <a href="#preparacao">2. Preparação</a>
+      <a href="#configuracao">3. Configuração</a>
+      <a href="#arranque">4. Primeiro arranque</a>
+      <a href="#primeiro-acesso">5. Primeiro acesso</a>
+      <a href="#utilizacao">6. Utilização diária</a>
+      <a href="#problemas">7. Troubleshooting</a>
+      <a href="#backups">8. Cópias de segurança</a>
+      <a href="#atualizacao">9. Atualização</a>
+      <a href="#checklist">10. Checklist</a>
+    </nav>
+
+    <main>
+      <section id="requisitos">
+        <h2>1. O que é necessário instalar?</h2>
+        <p>O LocalGRC utiliza Docker Compose para executar os vários componentes da aplicação de forma integrada. Numa instalação normal, não é necessário instalar individualmente o Django, PostgreSQL ou Nginx no Windows.</p>
+        <h3>1.1. Requisitos da máquina</h3>
+        <table>
+          <thead><tr><th>Componente</th><th>Requisito</th></tr></thead>
+          <tbody>
+            <tr><td>Sistema operativo</td><td>Windows 10 ou Windows 11, 64 bits</td></tr>
+            <tr><td>Virtualização</td><td>Virtualização de hardware ativa na BIOS/UEFI</td></tr>
+            <tr><td>Docker</td><td>Docker Desktop</td></tr>
+            <tr><td>Backend de containers</td><td>WSL 2</td></tr>
+            <tr><td>Memória</td><td>Recomendados 16 GB, especialmente quando se utiliza Ollama</td></tr>
+            <tr><td>Armazenamento</td><td>Espaço livre para imagens Docker, base de dados, ficheiros e modelos de IA</td></tr>
+            <tr><td>Rede</td><td>Acesso à porta HTTP configurada</td></tr>
+          </tbody>
+        </table>
+        <h3>1.2. Software necessário</h3>
+        <p><strong>Docker Desktop</strong> — descarregar em <a href="https://www.docker.com/products/docker-desktop/">docker.com/products/docker-desktop</a>.</p>
+        <ul>
+          <li>Instalar com o backend WSL 2.</li>
+          <li>Confirmar que a virtualização está ativa.</li>
+          <li>Abrir o Docker Desktop e aguardar que o motor Docker fique operacional.</li>
+        </ul>
+        <p><strong>Git (opcional)</strong> — <a href="https://git-scm.com/downloads">git-scm.com/downloads</a>. Só é necessário se a distribuição for obtida diretamente através de um repositório Git.</p>
+        <div class="note">
+          <strong>Não é necessário instalar diretamente no Windows</strong>
+          Python, Django, PostgreSQL, Nginx ou Ollama. Estes componentes são executados ou geridos através dos containers Docker da aplicação.
+        </div>
+      </section>
+
+      <section id="preparacao">
+        <h2>2. Preparar a instalação</h2>
+        <ol>
+          <li>Obter a versão autorizada do código-fonte LocalGRC.</li>
+          <li>Copiar ou extrair a pasta completa para a máquina de destino.</li>
+          <li>Confirmar que a pasta contém o <code>docker-compose.yml</code> e as pastas de aplicação e configuração, incluindo <code>backend/</code> e <code>deploy/</code>.</li>
+          <li>Confirmar que o Docker Desktop está iniciado.</li>
+        </ol>
+        <p>Abrir o PowerShell e entrar na pasta do projeto. Exemplo (adaptar o caminho):</p>
+        <pre><code>cd "C:\LocalGRC"</code></pre>
+        <h3>2.1. Confirmar o Docker</h3>
+        <pre><code>docker --version
+docker compose version
+docker info</code></pre>
+        <p>Os comandos devem devolver informação de versão e estado. Se <code>docker info</code> falhar, confirmar que o Docker Desktop está aberto e que o motor terminou o arranque.</p>
+      </section>
+
+      <section id="configuracao">
+        <h2>3. Configuração inicial</h2>
+        <p>Antes do primeiro arranque, confirmar a configuração fornecida com a distribuição do LocalGRC.</p>
+        <ul>
+          <li>Porta HTTP a utilizar.</li>
+          <li>Credenciais iniciais da conta administradora e procedimento de definição da palavra-passe.</li>
+          <li>Chave secreta Django.</li>
+          <li>Credenciais de acesso à base de dados.</li>
+          <li>Configuração dos modelos Ollama, quando aplicável.</li>
+          <li>Origens e endereços autorizados pela aplicação, quando aplicável.</li>
+        </ul>
+        <div class="warning">
+          <strong>Segurança — configurar credenciais próprias</strong>
+          Não reutilizar palavras-passe de demonstração. Utilizar uma palavra-passe administrativa forte e exclusiva. Não publicar ficheiros de configuração com segredos no Git, nem expor diretamente as portas internas da base de dados ou do Ollama à Internet.
+        </div>
+        <p>A configuração atual do projeto define 8081 como porta HTTP predefinida no Compose atualizado. Uma variável <code>HTTP_PORT</code> definida no ambiente ou no ficheiro de configuração pode substituir esse valor. Confirmar sempre a porta efetivamente publicada com <code>docker compose ps</code>.</p>
+      </section>
+
+      <section id="arranque">
+        <h2>4. Primeiro arranque da aplicação</h2>
+        <p>No PowerShell, dentro da pasta do projeto, executar:</p>
+        <pre><code>docker compose up -d --build</code></pre>
+        <p>O comando constrói as imagens necessárias, cria os containers e inicia os serviços em segundo plano. O primeiro arranque pode demorar mais tempo devido à transferência de imagens e à preparação dos componentes.</p>
+        <h3>4.1. Confirmar os serviços</h3>
+        <pre><code>docker compose ps -a</code></pre>
+        <table>
+          <thead><tr><th>Serviço</th><th>Função</th></tr></thead>
+          <tbody>
+            <tr><td><code>app</code></td><td>Backend Django</td></tr>
+            <tr><td><code>db</code></td><td>Base de dados PostgreSQL</td></tr>
+            <tr><td><code>web</code></td><td>Nginx e acesso HTTP</td></tr>
+            <tr><td><code>ollama</code></td><td>Serviço de modelos de IA</td></tr>
+            <tr><td><code>backup</code></td><td>Serviço de cópias de segurança</td></tr>
+          </tbody>
+        </table>
+        <p>O PostgreSQL deverá apresentar o estado <code>healthy</code>. Os restantes serviços deverão estar em execução (<code>Up</code>).</p>
+        <h3>4.2. Abrir a aplicação</h3>
+        <p>Utilizar a porta configurada. Exemplos:</p>
+        <pre><code>http://localhost:8081
+http://localhost:8080</code></pre>
+        <p>O endereço correto depende da configuração da instalação. Deverá surgir o ecrã de autenticação.</p>
+      </section>
+
+      <section id="primeiro-acesso">
+        <h2>5. Primeiro acesso</h2>
+        <p>Utilizar as credenciais administrativas definidas durante o provisionamento da instalação. O endereço de e-mail e a palavra-passe devem corresponder à conta efetivamente criada.</p>
+        <p>Depois de entrar:</p>
+        <ol>
+          <li>Confirmar que o Dashboard abre corretamente.</li>
+          <li>Verificar a organização inicial.</li>
+          <li>Confirmar os módulos disponíveis.</li>
+          <li>Criar ou configurar os utilizadores necessários.</li>
+          <li>Atribuir os perfis e permissões adequados.</li>
+          <li>Rever as configurações da organização.</li>
+        </ol>
+        <p>Não utilizar uma conta administrativa para o trabalho diário de utilizadores com funções limitadas.</p>
+        <h3>5.1. Redefinir a palavra-passe de uma conta</h3>
+        <p>Se a conta administrativa tiver o endereço <code>admin@local</code>, o Django permite solicitar uma nova palavra-passe através de:</p>
+        <pre><code>docker compose exec app python manage.py changepassword admin@local</code></pre>
+        <p class="small">O endereço de e-mail deve ser ajustado caso a conta administrativa tenha outro identificador.</p>
+      </section>
+
+      <section id="utilizacao">
+        <h2>6. Utilização diária</h2>
+        <h3>6.1. Iniciar a aplicação</h3>
+        <pre><code>cd "C:\LocalGRC"
+docker compose up -d</code></pre>
+        <h3>6.2. Confirmar o estado</h3>
+        <pre><code>docker compose ps</code></pre>
+        <h3>6.3. Reiniciar os serviços</h3>
+        <pre><code>docker compose restart</code></pre>
+        <h3>6.4. Parar a aplicação</h3>
+        <pre><code>docker compose stop</code></pre>
+        <p>O comando <code>stop</code> pára os containers, mas mantém os dados persistentes. Para voltar a iniciar:</p>
+        <pre><code>docker compose up -d</code></pre>
+        <div class="warning">
+          <strong>Não eliminar volumes</strong>
+          Não utilizar <code>docker compose down -v</code> como procedimento normal de paragem ou manutenção. A opção <code>-v</code> pode eliminar volumes que contêm a base de dados e outros dados persistentes.
+        </div>
+      </section>
+
+      <section id="problemas">
+        <h2>7. Resolução de problemas (Troubleshooting)</h2>
+        <h3>7.1. Docker não inicia</h3>
+        <p><strong>Sintoma:</strong> os comandos Docker devolvem erros de ligação.</p>
+        <ol>
+          <li>Confirmar que o Docker Desktop está aberto.</li>
+          <li>Aguardar que o motor Docker fique operacional.</li>
+          <li>Confirmar que a virtualização está ativa.</li>
+          <li>Verificar o estado do WSL 2.</li>
+        </ol>
+        <pre><code>docker info
+wsl --status</code></pre>
+
+        <h3>7.2. A aplicação não abre no navegador</h3>
+        <p><strong>Sintoma:</strong> <code>localhost</code> não responde.</p>
+        <p>Confirmar os containers e a porta publicada:</p>
+        <pre><code>docker compose ps -a
+docker compose ps web</code></pre>
+        <p>Testar o acesso HTTP, substituindo 8081 pela porta efetivamente configurada:</p>
+        <pre><code>curl.exe -I http://localhost:8081</code></pre>
+        <p>Uma resposta HTTP <code>200</code> ou <code>302</code> indica que existe comunicação com o serviço Web. Um redirecionamento <code>302</code> para <code>/login/</code> é normal quando não existe uma sessão autenticada.</p>
+
+        <h3>7.3. Erro de porta já utilizada</h3>
+        <p><strong>Sintoma:</strong></p>
+        <pre><code>Bind for 0.0.0.0:8080 failed: port is already allocated</code></pre>
+        <p>Outro programa ou container já está a utilizar a porta. Identificar os containers e respetivas portas:</p>
+        <pre><code>docker ps --format "table {{.Names}}\t{{.Ports}}"</code></pre>
+        <p>Escolher uma porta livre e ajustar <code>HTTP_PORT</code> ou a configuração correspondente. Não parar outras instalações sem confirmar a que aplicação pertencem.</p>
+
+        <h3>7.4. Nginx apresenta erro de upstream <code>app</code></h3>
+        <p><strong>Sintoma:</strong></p>
+        <pre><code>host not found in upstream "app"</code></pre>
+        <p>O Nginx não está a conseguir resolver o nome do serviço Django na rede Docker. Consultar os logs:</p>
+        <pre><code>docker compose logs web --tail 100
+docker compose ps app</code></pre>
+        <p>Se o container Nginx estiver em execução, testar a resolução DNS:</p>
+        <pre><code>docker exec localgrc-base-web-1 getent hosts app</code></pre>
+        <p>Se a resolução falhar, e depois de confirmar que o serviço <code>app</code> está ativo, recriar apenas o Nginx através do Compose:</p>
+        <pre><code>docker compose up -d --no-deps --force-recreate web</code></pre>
+        <p>Voltar a testar a resolução do nome <code>app</code> e o acesso HTTP. Não utilizar endereços IP fixos na configuração Nginx: os endereços internos dos containers podem mudar.</p>
+
+        <h3>7.5. Erro HTTP 500 depois do login</h3>
+        <p>Consultar os logs do backend e do Nginx:</p>
+        <pre><code>docker compose logs app --tail 200
+docker compose logs web --tail 100</code></pre>
+        <p>Registar o módulo onde ocorreu o erro, a hora aproximada, a operação efetuada e a mensagem apresentada nos logs. Não apagar a base de dados nem executar migrações manualmente sem identificar a causa.</p>
+
+        <h3>7.6. Base de dados indisponível</h3>
+        <pre><code>docker compose ps db
+docker compose logs db --tail 100</code></pre>
+        <p>Aguardar que o PostgreSQL apresente <code>healthy</code>. Não eliminar o volume <code>pgdata</code> como tentativa de resolução.</p>
+
+        <h3>7.7. Serviço Ollama indisponível</h3>
+        <pre><code>docker compose ps ollama
+docker compose logs ollama --tail 100</code></pre>
+        <p>A indisponibilidade do serviço de IA pode afetar funcionalidades dependentes dos modelos, sem significar necessariamente que o restante LocalGRC esteja indisponível.</p>
+      </section>
+
+      <section id="backups">
+        <h2>8. Cópias de segurança e proteção dos dados</h2>
+        <p>A instalação utiliza volumes Docker persistentes, incluindo:</p>
+        <table>
+          <thead><tr><th>Volume</th><th>Conteúdo</th></tr></thead>
+          <tbody>
+            <tr><td><code>pgdata</code></td><td>Dados PostgreSQL</td></tr>
+            <tr><td><code>uploads</code></td><td>Ficheiros carregados</td></tr>
+            <tr><td><code>staticfiles</code></td><td>Ficheiros estáticos</td></tr>
+            <tr><td><code>ollama_models</code></td><td>Modelos Ollama</td></tr>
+          </tbody>
+        </table>
+        <p>Confirmar que o serviço de backup está ativo e consultar os respetivos logs:</p>
+        <pre><code>docker compose ps backup
+docker compose logs backup --tail 100</code></pre>
+        <p>O administrador deve confirmar periodicamente que as cópias são produzidas, onde são armazenadas, que existe espaço disponível e que podem ser recuperadas.</p>
+        <div class="warning">
+          <strong>Recomendação</strong>
+          Manter cópias externas à máquina onde a aplicação está instalada. Uma cópia guardada apenas no mesmo disco não protege contra a falha desse disco. Confirmar o destino e a política de retenção efetivamente configurados na distribuição.
+        </div>
+      </section>
+
+      <section id="atualizacao">
+        <h2>9. Atualização da aplicação</h2>
+        <p>Antes de atualizar:</p>
+        <ol>
+          <li>Confirmar que existe uma cópia de segurança válida.</li>
+          <li>Obter a versão autorizada do projeto.</li>
+          <li>Consultar as notas da versão.</li>
+          <li>Aplicar a atualização de acordo com os procedimentos definidos para essa versão.</li>
+        </ol>
+        <p>Quando existirem alterações ao código, Dockerfile ou dependências, reconstruir:</p>
+        <pre><code>docker compose up -d --build</code></pre>
+        <p>Confirmar depois:</p>
+        <pre><code>docker compose ps -a</code></pre>
+        <p>Não eliminar volumes nem apagar dados para efetuar uma atualização.</p>
+      </section>
+
+      <section id="checklist">
+        <h2>10. Checklist de validação da instalação</h2>
+        <ul class="checklist">
+          <li>Docker Desktop instalado e operacional.</li>
+          <li>WSL 2 funcional.</li>
+          <li>Código-fonte completo e configuração validada.</li>
+          <li>Credenciais e segredos próprios da instalação.</li>
+          <li>Containers iniciados.</li>
+          <li>PostgreSQL com estado <code>healthy</code>.</li>
+          <li>Nginx acessível na porta configurada.</li>
+          <li>Ecrã de autenticação apresentado.</li>
+          <li>Login administrativo testado.</li>
+          <li>Dashboard e módulos principais testados.</li>
+          <li>Serviço de IA validado, quando aplicável.</li>
+          <li>Serviço de backup ativo e cópias verificadas.</li>
+          <li>Procedimento de recuperação conhecido.</li>
+        </ul>
+        <div class="success">
+          <strong>Instalação concluída</strong>
+          A instalação só deverá ser considerada concluída depois de validar o acesso, a autenticação, os módulos principais e a existência de cópias de segurança recuperáveis.
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    LocalGRC — Guia rápido de instalação e utilização. Documento de apoio operacional.
+    Confirmar sempre os nomes dos serviços, variáveis e procedimentos com a versão efetivamente distribuída.
+  </footer>
+</div>
+</body>
+</html>

@@ -118,6 +118,19 @@ FINDINGS = [
 ]
 
 
+VULNERABILITIES = [
+    {"title": "OpenSSL RCE in production ingress", "cve_id": "CVE-2024-0727", "description": "PKCS12 NULL pointer dereference affecting TLS handshake. Patched in OpenSSL 3.0.13+.", "affected_endpoint": "AWS production account / ingress-alb:443", "cvss_score": "9.1", "severity": "critical", "status": "in_progress", "remediation_plan": "Upgrade OpenSSL to 3.0.13 on all edge nodes.", "days_ago_discovered": 3, "days_until_due": 11},
+    {"title": "PostgreSQL privilege escalation", "cve_id": "CVE-2024-10977", "description": "pg_dump client-side SQL injection via malicious server.", "affected_endpoint": "Customer CRM database / postgres:5432", "cvss_score": "8.8", "severity": "high", "status": "open", "remediation_plan": "Upgrade libpq to 16.5.", "days_ago_discovered": 10, "days_until_due": 20},
+    {"title": "Missing HSTS header on customer portal", "cve_id": "", "description": "Strict-Transport-Security header absent.", "affected_endpoint": "Payment gateway / portal.example.com", "cvss_score": "4.3", "severity": "medium", "status": "open", "remediation_plan": "Add HSTS header in nginx config.", "days_ago_discovered": 1, "days_until_due": 29},
+    {"title": "S3 bucket ACL allows public read on backup prefix", "cve_id": "", "description": "backup/* prefix inherits bucket ACL allowing public read.", "affected_endpoint": "Backup storage (S3) / backups-prod/backup/*", "cvss_score": "7.5", "severity": "high", "status": "mitigated", "remediation_plan": "Enable Block Public Access.", "days_ago_discovered": 30, "days_until_due": 0},
+    {"title": "Weak TLS cipher suites on legacy endpoint", "cve_id": "", "description": "TLS 1.0/1.1 still enabled with CBC ciphers.", "affected_endpoint": "Datacenter rack A / legacy-app.internal:8443", "cvss_score": "5.9", "severity": "medium", "status": "open", "remediation_plan": "Disable TLS 1.0/1.1.", "days_ago_discovered": 45, "days_until_due": -15},
+    {"title": "npm transitive dependency prototype pollution", "cve_id": "CVE-2024-21503", "description": "minimist <1.2.6 prototype pollution.", "affected_endpoint": "Source code (GitHub) / frontend/package-lock.json", "cvss_score": "6.5", "severity": "medium", "status": "in_progress", "remediation_plan": "Override minimist >=1.2.8.", "days_ago_discovered": 7, "days_until_due": 23},
+    {"title": "Exposed /metrics endpoint on staging", "cve_id": "", "description": "Prometheus metrics reachable from public IP.", "affected_endpoint": "AWS production account / staging.example.com/metrics", "cvss_score": "3.7", "severity": "low", "status": "false_positive", "remediation_plan": "Confirmed staging-only.", "days_ago_discovered": 60, "days_until_due": 0},
+    {"title": "Unencrypted S3 replication log to secondary region", "cve_id": "", "description": "Replication logs contain metadata in plaintext.", "affected_endpoint": "Backup storage (S3) / replication-logs/", "cvss_score": "4.9", "severity": "medium", "status": "accepted", "remediation_plan": "Accepted risk: metadata only.", "days_ago_discovered": 120, "days_until_due": 0},
+    {"title": "GitHub Actions workflow injection via PR title", "cve_id": "", "description": "Shell injection via PR title in run step.", "affected_endpoint": "Source code (GitHub) / .github/workflows/ci.yml", "cvss_score": "8.1", "severity": "high", "status": "mitigated", "remediation_plan": "Moved PR title to env var.", "days_ago_discovered": 15, "days_until_due": -5},
+    {"title": "Docker base image running outdated Alpine", "cve_id": "", "description": "Alpine 3.18 has multiple CVEs.", "affected_endpoint": "AWS production account / docker images", "cvss_score": "6.1", "severity": "medium", "status": "open", "remediation_plan": "Bump to Alpine 3.20.", "days_ago_discovered": 5, "days_until_due": 25},
+]
+
 class Command(BaseCommand):
     help = "Populate LocalGRC with realistic demo data (idempotent)."
 
@@ -139,6 +152,14 @@ class Command(BaseCommand):
                     "seed_policy_workflow", "seed_vendor_workflow",
                     "seed_incident_workflow", "seed_audit_workflows",
                     "seed_sample_controls"]:
+            try:
+                call_command(cmd, verbosity=0, organization=org.slug)
+                continue
+            except TypeError:
+                pass
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f"  {cmd}: {e}"))
+                continue
             try:
                 call_command(cmd, verbosity=0)
             except Exception as e:
@@ -178,6 +199,9 @@ class Command(BaseCommand):
 
         ev = self._evidence(org, admin, controls, today)
         self.stdout.write(f"  Evidence: {len(ev)}")
+
+        vulns = self._vulnerabilities(org, admin, today)
+        self.stdout.write(f"  Vulnerabilities: {len(vulns)}")
 
         self.stdout.write(self.style.SUCCESS(
             "\nDone. Visit / to see the dashboard."))
@@ -457,4 +481,31 @@ class Command(BaseCommand):
                           "verified_by": admin if verified else None,
                           "verified_at": timezone.now() - timedelta(days=abs(valid_off) - 5) if verified else None})
             out.append(e)
+        return out
+
+    # -------------------------------------------------------- vulnerabilities
+    def _vulnerabilities(self, org, admin, today):
+        from decimal import Decimal
+        from apps.vulnerabilities.models import Vulnerability
+
+        out = []
+        for v in VULNERABILITIES:
+            discovered_at = timezone.now() - timedelta(days=v["days_ago_discovered"])
+            due_date = today + timedelta(days=v["days_until_due"]) if v["days_until_due"] else None
+            vuln, _ = Vulnerability.objects.get_or_create(
+                organization=org, title=v["title"],
+                defaults={
+                    "cve_id": v["cve_id"],
+                    "description": v["description"],
+                    "affected_endpoint": v["affected_endpoint"],
+                    "cvss_score": Decimal(v["cvss_score"]) if v["cvss_score"] else None,
+                    "severity": v["severity"],
+                    "status": v["status"],
+                    "remediation_plan": v["remediation_plan"],
+                    "discovered_at": discovered_at,
+                    "due_date": due_date,
+                    "owner": admin,
+                },
+            )
+            out.append(vuln)
         return out
