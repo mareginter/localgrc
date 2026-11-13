@@ -1,0 +1,89 @@
+{% extends "risks/base_risks.html" %}
+{% block risks_content %}
+<div style="max-width:900px;">
+  <h1>Organization settings</h1>
+  <p style="color:#6b7280;font-size:0.9rem;">
+    These details appear on the dashboard and audit reports. Only organization admins can edit them.
+  </p>
+
+  {% if not is_admin %}
+    <div style="padding:1rem;background:#fef3c7;border-radius:6px;color:#92400e;">
+      Read-only view. Only admins can modify organization settings.
+    </div>
+  {% endif %}
+
+  <form method="post" style="margin-top:1.5rem;">
+    {% csrf_token %}
+
+    <fieldset style="border:1px solid #e5e7eb;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem;background:#fff;">
+      <legend style="padding:0 0.5rem;font-weight:700;color:#374151;">Identification</legend>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div><label style="font-size:0.85rem;color:#374151;">{{ form.name.label }}</label>{{ form.name }}{{ form.name.errors }}</div>
+        <div><label style="font-size:0.85rem;color:#374151;">{{ form.legal_name.label }}</label>{{ form.legal_name }}{{ form.legal_name.errors }}</div>
+        <div><label style="font-size:0.85rem;color:#374151;">{{ form.vat_number.label }}</label>{{ form.vat_number }}{{ form.vat_number.errors }}</div>
+        <div><label style="font-size:0.85rem;color:#374151;">{{ form.registration_number.label }}</label>{{ form.registration_number }}{{ form.registration_number.errors }}</div>
+      </div>
+      <div style="margin-top:1rem;"><label style="font-size:0.85rem;color:#374151;">{{ form.description.label }}</label>{{ form.description }}{{ form.description.errors }}</div>
+    </fieldset>
+
+    <fieldset style="border:1px solid #e5e7eb;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem;background:#fff;">
+      <legend style="padding:0 0.5rem;font-weight:700;color:#374151;">Address</legend>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div style="grid-column:1/-1;"><label style="font-size:0.85rem;color:#374151;">Address line 1</label>{{ form.address_line1 }}{{ form.address_line1.errors }}</div>
+        <div style="grid-column:1/-1;"><label style="font-size:0.85rem;color:#374151;">Address line 2</label>{{ form.address_line2 }}{{ form.address_line2.errors }}</div>
+        <div><label style="font-size:0.85rem;color:#374151;">City</label>{{ form.city }}{{ form.city.errors }}</div>
+        <div><label style="font-size:0.85rem;color:#374151;">Postal code</label>{{ form.postal_code }}{{ form.postal_code.errors }}</div>
+        <div><label style="font-size:0.85rem;color:#374151;">Country (ISO 2-letter)</label>{{ form.country }}{{ form.country.errors }}</div>
+      </div>
+    </fieldset>
+
+    <fieldset style="border:1px solid #e5e7eb;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem;background:#fff;">
+      <legend style="padding:0 0.5rem;font-weight:700;color:#374151;">Contact & business context</legend>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div><label style="font-size:0.85rem;color:#374151;">Contact email</label>{{ form.contact_email }}{{ form.contact_email.errors }}</div>
+        <div><label style="font-size:0.85rem;color:#374151;">Contact phone</label>{{ form.contact_phone }}{{ form.contact_phone.errors }}</div>
+        <div><label style="font-size:0.85rem;color:#374151;">Website</label>{{ form.website }}{{ form.website.errors }}</div>
+        <div><label style="font-size:0.85rem;color:#374151;">Industry / CAE</label>{{ form.industry }}{{ form.industry.errors }}</div>
+        <div><label style="font-size:0.85rem;color:#374151;">Employee count</label>{{ form.employee_count }}{{ form.employee_count.errors }}</div>
+        <div><label style="font-size:0.85rem;color:#374151;">Annual revenue (EUR)</label>{{ form.annual_revenue_eur }}{{ form.annual_revenue_eur.errors }}</div>
+      </div>
+    </fieldset>
+
+    <fieldset style="border:1px solid #e5e7eb;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem;background:#fff;">
+      <legend style="padding:0 0.5rem;font-weight:700;color:#374151;">GRC context</legend>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div><label style="font-size:0.85rem;color:#374151;">DPO name</label>{{ form.dpo_name }}{{ form.dpo_name.errors }}</div>
+        <div><label style="font-size:0.85rem;color:#374151;">DPO email</label>{{ form.dpo_email }}{{ form.dpo_email.errors }}</div>
+      </div>
+      <div style="margin-top:1rem;"><label style="font-size:0.85rem;color:#374151;">Regulatory context</label>{{ form.regulatory_context }}{{ form.regulatory_context.errors }}
+        <div style="font-size:0.75rem;color:#6b7280;margin-top:0.25rem;">{{ form.regulatory_context.help_text }}</div>
+      </div>
+    </fieldset>
+
+    <fieldset style="border:1px solid #e5e7eb;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem;background:#fff;">
+      <legend style="padding:0 0.5rem;font-weight:700;color:#374151;">Branding</legend>
+      <div><label style="font-size:0.85rem;color:#374151;">Logo URL</label>{{ form.logo_url }}{{ form.logo_url.errors }}
+        <div style="font-size:0.75rem;color:#6b7280;margin-top:0.25rem;">{{ form.logo_url.help_text }}</div>
+      </div>
+      {% if org.logo_url %}
+        <div style="margin-top:0.75rem;"><img src="{{ org.logo_url }}" alt="Current logo" style="max-height:60px;"></div>
+      {% endif %}
+    </fieldset>
+
+    {% if is_admin %}
+      <button type="submit" style="padding:0.6rem 1.5rem;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:0.95rem;cursor:pointer;">
+        Save organization
+      </button>
+    {% endif %}
+  </form>
+</div>
+
+<style>
+  form input[type=text], form input[type=email], form input[type=url],
+  form input[type=number], form select, form textarea {
+    width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:5px;
+    font-family:inherit; font-size:0.9rem; margin-top:0.25rem;
+  }
+  form textarea { resize:vertical; }
+</style>
+{% endblock %}

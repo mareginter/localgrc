@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
+from .models import Organization
+
 User = get_user_model()
 
 
@@ -72,3 +74,30 @@ class UserUpdateForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+class OrganizationForm(forms.ModelForm):
+    class Meta:
+        model = Organization
+        fields = [
+            "name", "legal_name", "description",
+            "vat_number", "registration_number",
+            "address_line1", "address_line2", "city", "postal_code", "country",
+            "contact_email", "contact_phone", "website",
+            "industry", "employee_count", "annual_revenue_eur",
+            "regulatory_context", "dpo_name", "dpo_email",
+            "logo_url",
+        ]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 2}),
+            "regulatory_context": forms.Textarea(attrs={"rows": 3}),
+        }
+        labels = {
+            "name": "Trading name",
+            "legal_name": "Legal name",
+        }
+
+    def clean_country(self):
+        country = self.cleaned_data.get("country", "").upper()
+        if country and len(country) != 2:
+            raise forms.ValidationError("Use a 2-letter ISO country code (e.g. PT, ES, FR).")
+        return country

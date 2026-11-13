@@ -61,13 +61,56 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Organization(BaseModel):
-    name = models.CharField(max_length=255)
+    # Identification
+    name = models.CharField(max_length=255, help_text="Trading name / short name")
+    legal_name = models.CharField(max_length=255, blank=True, help_text="Full legal entity name")
     slug = models.SlugField(max_length=120, unique=True)
     description = models.TextField(blank=True)
+
+    # Fiscal / registration
+    vat_number = models.CharField(max_length=64, blank=True, verbose_name="VAT / NIF")
+    registration_number = models.CharField(max_length=64, blank=True, help_text="Commercial registry number")
+
+    # Address
+    address_line1 = models.CharField(max_length=255, blank=True)
+    address_line2 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=128, blank=True)
+    postal_code = models.CharField(max_length=32, blank=True)
+    country = models.CharField(max_length=2, default="PT", help_text="ISO 3166-1 alpha-2 code")
+
+    # Contact
+    contact_email = models.EmailField(blank=True)
+    contact_phone = models.CharField(max_length=64, blank=True)
+    website = models.URLField(blank=True)
+
+    # Business context
+    industry = models.CharField(max_length=128, blank=True, help_text="CAE code or sector")
+    employee_count = models.PositiveIntegerField(null=True, blank=True)
+    annual_revenue_eur = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+
+    # GRC context
+    regulatory_context = models.TextField(
+        blank=True,
+        help_text="Applicable jurisdictions, regulators, and obligations (e.g. GDPR, NIS2, DORA)"
+    )
+    dpo_name = models.CharField(max_length=255, blank=True, verbose_name="DPO name")
+    dpo_email = models.EmailField(blank=True, verbose_name="DPO email")
+
+    # Branding
+    logo_url = models.URLField(blank=True, help_text="Public URL of the organization logo")
+
     settings = models.JSONField(default=dict, blank=True)
+
+    class Meta(BaseModel.Meta):
+        verbose_name = "Organization"
+        verbose_name_plural = "Organizations"
 
     def __str__(self):
         return self.name
+
+    @property
+    def display_name(self):
+        return self.legal_name or self.name
 
 
 ROLE_CODES = [

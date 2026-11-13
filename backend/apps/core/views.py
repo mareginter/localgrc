@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, OuterRef, Q, Subquery
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from apps.audits.models import AuditFinding
@@ -17,8 +17,8 @@ from apps.vendors.models import Vendor
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.shortcuts import render, redirect, get_object_or_404
-from .forms import UserCreateForm, UserUpdateForm
+from django.shortcuts import redirect, render, redirect, get_object_or_404
+from .forms import UserCreateForm, UserUpdateForm, OrganizationForm
 
 from .models import AuditLog, Role, UserRole
 from .access import get_active_organization, require_org_roles, switch_organization as _switch_organization
@@ -253,3 +253,30 @@ def user_update(request, pk):
 @login_required
 def organization_switch(request):
     return _switch_organization(request)
+
+@login_required
+def organization_settings(request):
+    """Admin-only edit of the current organization's profile."""
+    org = _org(request)
+    if not org:
+        from django.http import Http404
+        raise Http404("No organization configured.")
+    # Only admins can edit
+    is_admin = request.user.is_superuser or request.user.user_roles.filter(
+        organization=org, role__code="admin", deleted_at__isnull=True
+    ).exists()
+    if not is_admin:
+        messages.error(request, "Only organization admins can edit these settings.")
+        return redirect("home")
+
+    form = OrganizationForm(request.POST or None, instance=org)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Organization profile updated.")
+        return redirect("organization_settings")
+
+    return render(request, "core/organization_settings.html", {
+        "org": org,
+        "form": form,
+        "is_admin": is_admin,
+    })
