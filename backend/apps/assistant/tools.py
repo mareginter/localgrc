@@ -111,11 +111,19 @@ class ToolExecutor:
     def list_risks(self, severity=None, status=None, limit=10):
         from apps.risks.models import Risk
         qs = Risk.objects.filter(organization=self.org).select_related("owner")
-        if status:
-            qs = qs.filter(status=status)
+        
+        if status and isinstance(status, str):
+            qs = qs.filter(status=status.lower().strip())
+            
         risks = list(qs[:200])
-        if severity:
-            risks = [r for r in risks if r.risk_level == severity]
+        
+        if severity and isinstance(severity, str):
+            sev = severity.lower().strip()
+            if sev in ("critical", "high", "medium", "low"):
+                risks = [r for r in risks if r.risk_level == sev]
+            elif sev == "unknown":
+                risks = [r for r in risks if r.risk_level == "unknown"]
+                
         risks = risks[:limit]
         return {"count": len(risks), "risks": [
             {"code": r.code, "title": r.title, "category": r.get_category_display(),

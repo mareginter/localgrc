@@ -121,6 +121,7 @@ def assistant_stream(request):
 
                     # Append assistant's intention to call tools
                     chat_messages.append(msg)
+                    print(f"--- OLLAMA REQUESTED TOOLS: {tool_calls}", flush=True)
 
                     for tc in tool_calls:
                         # Parse tool call data
@@ -136,6 +137,8 @@ def assistant_stream(request):
                         
                         # Execute tool
                         result = executor.execute(name, args)
+                        
+                        print(f"--- TOOL RESULT: {result}", flush=True)
                         
                         # Feed result back to model
                         chat_messages.append({
