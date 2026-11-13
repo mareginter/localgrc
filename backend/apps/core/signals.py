@@ -1,12 +1,38 @@
 import datetime
 import uuid
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
 from .middleware import get_current_request, get_current_user
 from .mixins import BaseModel
 from .models import AuditLog
+
+
+# Explicit tenant ownership paths for models that do not store organization
+# directly. For link models, every path must resolve to the same organization.
+_TENANT_RELATION_PATHS = {
+    "audits.auditfinding": (("audit",),),
+    "audits.correctiveaction": (("finding", "audit"),),
+    "controls.controlrequirement": (("control",), ("requirement", "framework_version", "framework")),
+    "controls.controlimplementation": (("control",),),
+    "frameworks.frameworkversion": (("framework",),),
+    "frameworks.requirement": (("framework_version", "framework"),),
+    "incidents.regulatorydeadline": (("incident",),),
+    "incidents.incidentasset": (("incident",), ("asset",)),
+    "incidents.incidentvendor": (("incident",), ("vendor",)),
+    "incidents.incidentrisk": (("incident",), ("risk",)),
+    "policies.policyversion": (("policy",),),
+    "policies.policyapproval": (("policy_version", "policy"),),
+    "risks.riskassessment": (("risk",),),
+    "risks.risktreatment": (("risk",),),
+    "risks.riskasset": (("risk",), ("asset",)),
+    "risks.riskcontrol": (("risk",), ("control",)),
+    "vendors.vendorassessment": (("vendor",),),
+    "vendors.vendorrisk": (("vendor",), ("risk",)),
+    "vendors.vendorcontrol": (("vendor",), ("control",)),
+}
 
 
 def _serialize(instance):
@@ -52,8 +78,35 @@ def _diff(before, after, sender):
 
 
 def _org_id(instance):
-    org = getattr(instance, "organization", None)
-    return getattr(org, "pk", None)
+    """Resolve tenant ownership using explicit, reviewed model relationships.
+
+    Returning None is intentional when a relation is missing or when a link
+    model connects records from different organizations: an audit event must
+    never be attributed to an arbitrary tenant.
+    """
+    direct_org_id = getattr(instance, "organization_id", None)
+    if direct_org_id is not None:
+        return direct_org_id
+
+    paths = _TENANT_RELATION_PATHS.get(instance._meta.label_lower, ())
+    if not paths:
+        return None
+
+    resolved_ids = []
+    for path in paths:
+        related = instance
+        try:
+            for attribute in path:
+                related = getattr(related, attribute)
+            organization_id = getattr(related, "organization_id", None)
+        except (AttributeError, ObjectDoesNotExist):
+            return None
+        if organization_id is None:
+            return None
+        resolved_ids.append(organization_id)
+
+    # Link records must not silently bridge two tenants.
+    return resolved_ids[0] if all(value == resolved_ids[0] for value in resolved_ids) else None
 
 
 def _auditable(sender):

@@ -9,7 +9,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.db import models
 from django.utils import timezone as dj_timezone
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 
 
 from .forms import EvidenceForm
@@ -96,16 +96,24 @@ def evidence_update(request, pk):
 
 
 @login_required
+@require_POST
 @require_org_roles('admin', 'control_owner', 'contributor')
 def evidence_verify(request, pk):
     org = _org(request)
     evidence = get_object_or_404(Evidence, pk=pk, organization=org)
-    if request.method == "POST":
-        evidence.verified_by = request.user
-        evidence.verified_at = dj_timezone.now()
-        evidence.verification_notes = request.POST.get("notes", "")
-        evidence.save()
-        messages.success(request, "Evidence verified.")
+
+    if evidence.collected_by_id == request.user.pk:
+        messages.error(
+            request,
+            "You cannot verify evidence that you collected. Ask another authorized user to verify it.",
+        )
+        return redirect("evidence_detail", pk=evidence.pk)
+
+    evidence.verified_by = request.user
+    evidence.verified_at = dj_timezone.now()
+    evidence.verification_notes = request.POST.get("notes", "")
+    evidence.save(update_fields=["verified_by", "verified_at", "verification_notes", "updated_at"])
+    messages.success(request, "Evidence verified.")
     return redirect("evidence_detail", pk=evidence.pk)
 
 

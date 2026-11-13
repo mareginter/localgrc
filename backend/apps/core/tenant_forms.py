@@ -8,14 +8,18 @@ class TenantScopedModelFormMixin:
     def __init__(self, *args, organization=None, **kwargs):
         self.organization = organization
         super().__init__(*args, **kwargs)
-        if organization is None:
-            return
-
         User = get_user_model()
         for name, field in self.fields.items():
             queryset = getattr(field, "queryset", None)
             if queryset is None:
                 continue
+
+            # A form without an active organization must never expose related
+            # objects from every tenant. Keep non-queryset fields untouched.
+            if organization is None:
+                field.queryset = queryset.none()
+                continue
+
             model = queryset.model
             if model is User:
                 field.queryset = queryset.filter(

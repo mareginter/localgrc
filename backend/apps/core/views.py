@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count, OuterRef, Q, Subquery
 from django.shortcuts import render
 from django.utils import timezone
 
@@ -220,10 +221,27 @@ def user_create(request):
 @require_org_roles("admin")
 def user_update(request, pk):
     org = get_active_organization(request)
-    user_obj = get_object_or_404(
-        User.objects.filter(user_roles__organization=org, user_roles__deleted_at__isnull=True).distinct(),
-        pk=pk,
+    # User is a global identity shared across organizations. An organization
+    # administrator may edit it only when it has no active membership elsewhere.
+    active_org_count = (
+        UserRole.objects.filter(
+            user_id=OuterRef("pk"),
+            deleted_at__isnull=True,
+        )
+        .values("user_id")
+        .annotate(total=Count("organization", distinct=True))
+        .values("total")
     )
+    editable_users = (
+        User.objects.filter(
+            user_roles__organization=org,
+            user_roles__deleted_at__isnull=True,
+        )
+        .annotate(active_organization_count=Subquery(active_org_count))
+        .filter(active_organization_count=1)
+        .distinct()
+    )
+    user_obj = get_object_or_404(editable_users, pk=pk)
     form = UserUpdateForm(request.POST or None, instance=user_obj)
     if request.method == "POST" and form.is_valid():
         form.save()

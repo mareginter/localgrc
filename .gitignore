@@ -20,3 +20,5 @@ backups/
 .pdf-backup-*
 
 .templates-backup-*
+
+*.egg-info/

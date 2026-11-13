@@ -1,9 +1,8 @@
 from apps.core.access import get_active_organization, require_org_roles
-import os
+from apps.core.downloads import internal_file_download
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import FileResponse
 from .models import DocumentTemplate
 from .forms import DocumentTemplateForm
 
@@ -39,13 +38,4 @@ def template_create(request):
 def template_download(request, pk):
     organization = get_active_organization(request)
     template = get_object_or_404(DocumentTemplate, pk=pk, organization=organization)
-    if not template.file:
-        messages.error(request, "This template has no file attached.")
-        return redirect('template_list')
-    
-    file_path = template.file.path
-    if os.path.exists(file_path):
-        return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=os.path.basename(file_path))
-    else:
-        messages.error(request, "File not found on the server.")
-        return redirect('template_list')
+    return internal_file_download(template.file)

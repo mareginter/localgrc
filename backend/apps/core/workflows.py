@@ -1,10 +1,52 @@
 """Tenant-safe helpers for reading and creating workflow instances."""
 
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import IntegrityError, transaction
 
 from .models import WorkflowDefinition, WorkflowInstance
+
+
+# Explicit tenant roots for workflow-capable child models. Keep these paths
+# aligned with the tenant relation map used by core.signals.
+_WORKFLOW_TENANT_RELATION_PATHS = {
+    "audits.auditfinding": (("audit",),),
+    "audits.correctiveaction": (("finding", "audit"),),
+    "controls.controlrequirement": (
+        ("control",),
+        ("requirement", "framework_version", "framework"),
+    ),
+    "controls.controlimplementation": (("control",),),
+    "frameworks.frameworkversion": (("framework",),),
+    "frameworks.requirement": (("framework_version", "framework"),),
+    "incidents.regulatorydeadline": (("incident",),),
+    "incidents.incidentasset": (("incident",), ("asset",)),
+    "incidents.incidentvendor": (("incident",), ("vendor",)),
+    "incidents.incidentrisk": (("incident",), ("risk",)),
+    "policies.policyversion": (("policy",),),
+    "policies.policyapproval": (("policy_version", "policy"),),
+    "risks.riskassessment": (("risk",),),
+    "risks.risktreatment": (("risk",),),
+    "risks.riskasset": (("risk",), ("asset",)),
+    "risks.riskcontrol": (("risk",), ("control",)),
+    "vendors.vendorassessment": (("vendor",),),
+    "vendors.vendorrisk": (("vendor",), ("risk",)),
+    "vendors.vendorcontrol": (("vendor",), ("control",)),
+}
+
+
+def _organization_id_through_path(obj, path):
+    current = obj
+    for relation_name in path:
+        try:
+            current = getattr(current, relation_name)
+        except (AttributeError, ObjectDoesNotExist):
+            return None
+        if current is None or getattr(current, "deleted_at", None) is not None:
+            return None
+    if getattr(current, "deleted_at", None) is not None:
+        return None
+    return getattr(current, "organization_id", None)
 
 
 def _object_organization_id(obj):
@@ -13,16 +55,22 @@ def _object_organization_id(obj):
         return obj.pk
 
     if any(field.name == "organization" for field in obj._meta.get_fields()):
+        if getattr(obj, "deleted_at", None) is not None:
+            return None
         return getattr(obj, "organization_id", None)
 
-    # AuditFinding is tenant-owned through its parent Audit.
-    if any(field.name == "audit" for field in obj._meta.get_fields()):
-        audit = getattr(obj, "audit", None)
-        if audit is None or getattr(audit, "deleted_at", None) is not None:
-            return None
-        return getattr(audit, "organization_id", None)
+    relation_paths = _WORKFLOW_TENANT_RELATION_PATHS.get(obj._meta.label_lower)
+    if not relation_paths:
+        return None
 
-    return None
+    organization_ids = [
+        _organization_id_through_path(obj, path) for path in relation_paths
+    ]
+    if not organization_ids or any(org_id is None for org_id in organization_ids):
+        return None
+    if len(set(organization_ids)) != 1:
+        return None
+    return organization_ids[0]
 
 
 def _validate_instance(instance, obj, organization, content_type):
