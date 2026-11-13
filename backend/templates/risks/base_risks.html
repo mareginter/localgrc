@@ -70,6 +70,7 @@
       <a href="{% url 'vuln_list' %}" class="{% if '/vulnerabilities/' in request.path %}active{% endif %}">Vulns</a>
       <a href="{% url 'assistant_home' %}" class="{% if '/assistant/' in request.path %}active{% endif %}">Assistant</a>
       <a href="{% url 'user_list' %}" class="{% if '/users/' in request.path %}active{% endif %}">Team</a>
+      <a href="{% url 'organization_settings' %}" class="{% if '/settings/organization/' in request.path %}active{% endif %}">Settings</a>
     </nav>
     {% if available_organizations|length > 1 %}
       <form method="post" action="{% url 'organization_switch' %}" style="margin-left:auto;display:flex;align-items:center;gap:.4rem;max-width:260px">

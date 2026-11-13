@@ -66,10 +66,19 @@
 
 <div class="dash">
   <div class="dash-hero">
-    <div>
-      <h1>{{ org.name }}</h1>
-      <div class="meta">{{ now|date:"l, j F Y - H:i" }}</div>
-    </div>
+      <div style="display:flex;align-items:center;gap:1rem;">
+        {% if org.logo_url %}
+          <img src="{{ org.logo_url }}" alt="{{ org.display_name }}" style="max-height:56px;border-radius:6px;">
+        {% endif %}
+        <div>
+          <h1>{{ org.display_name }}</h1>
+          <div class="meta">
+            {% if org.legal_name and org.legal_name != org.name %}{{ org.name }} &middot; {% endif %}
+            {% if org.vat_number %}{{ org.vat_number }} &middot; {% endif %}
+            {{ now|date:"l, j F Y - H:i" }}
+          </div>
+        </div>
+      </div>
     <div class="quick-actions">
       <a href="{% url 'risk_create' %}" class="btn btn-primary">+ Risk</a>
       <a href="{% url 'control_create' %}" class="btn btn-info">+ Control</a>
