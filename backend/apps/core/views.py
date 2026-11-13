@@ -183,7 +183,7 @@ def home(request):
         "unverified_evidence_count": len(unverified_evidence),
         "policies_pending": policies_pending,
         "critical_vendors_no_dpa_count": len(critical_vendors_no_dpa),
-        "recent_activity": recent_activity,
+
         "alerts": alerts,
     })
 

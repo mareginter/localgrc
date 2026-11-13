@@ -28,6 +28,9 @@
   <div id="messages" style="flex:1;overflow-y:auto;padding:1.25rem;"></div>
   <form id="chat-form" style="border-top:1px solid #e5e7eb;padding:0.75rem;display:flex;gap:0.5rem;">
     <textarea id="chat-input" rows="2" placeholder="Pergunta sobre riscos, controlos, políticas ou os PDFs que carregaste..." style="flex:1;resize:none;font-family:inherit;"></textarea>
+    <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;color:#555;">
+      <input type="checkbox" id="use-tools" checked> Use platform data
+    </label>
     <button type="submit" id="send-btn" style="align-self:stretch;">Send</button>
   </form>
 </div>
@@ -105,7 +108,11 @@
           'Content-Type': 'application/json',
           'X-CSRFToken': '{{ csrf_token }}',
         },
-        body: JSON.stringify({ message: text, history: history.slice(-10) }),
+        body: JSON.stringify({
+          message: text,
+          history: history.slice(-10),
+          use_tools: (document.getElementById('use-tools') || {}).checked !== false,
+        }),
       });
       
       if (!response.ok || !response.body) {
@@ -132,6 +139,9 @@
             if (obj.delta) {
               buffer += obj.delta;
               replyBox.textContent = buffer;
+              messagesEl.scrollTop = messagesEl.scrollHeight;
+            } else if (obj.status && !buffer) {
+              replyBox.innerHTML = '<em style="color:#888;font-size:0.85rem;">&#9203; ' + obj.status + '</em>';
               messagesEl.scrollTop = messagesEl.scrollHeight;
             } else if (obj.error) {
               replyBox.textContent = 'Error: ' + obj.error;

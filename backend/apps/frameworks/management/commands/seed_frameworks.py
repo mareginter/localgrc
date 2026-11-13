@@ -6,121 +6,156 @@ from apps.core.models import Organization
 from apps.frameworks.models import Framework, FrameworkVersion, Requirement
 
 
-ISO27001_CONTROLS = [
-    ("A.5.1", "Policies for information security", "Organizational"),
-    ("A.5.2", "Information security roles and responsibilities", "Organizational"),
-    ("A.5.3", "Segregation of duties", "Organizational"),
-    ("A.5.4", "Management responsibilities", "Organizational"),
-    ("A.5.5", "Contact with authorities", "Organizational"),
-    ("A.5.6", "Contact with special interest groups", "Organizational"),
-    ("A.5.7", "Threat intelligence", "Organizational"),
-    ("A.5.8", "Information security in project management", "Organizational"),
-    ("A.5.9", "Inventory of information and other associated assets", "Organizational"),
-    ("A.5.10", "Acceptable use of information and other associated assets", "Organizational"),
-    ("A.5.11", "Return of assets", "Organizational"),
-    ("A.5.12", "Classification of information", "Organizational"),
-    ("A.5.13", "Labelling of information", "Organizational"),
-    ("A.5.14", "Information transfer", "Organizational"),
-    ("A.5.15", "Access control", "Organizational"),
-    ("A.5.16", "Identity management", "Organizational"),
-    ("A.5.17", "Authentication information", "Organizational"),
-    ("A.5.18", "Access rights", "Organizational"),
-    ("A.5.19", "Information security in supplier relationships", "Organizational"),
-    ("A.5.20", "Addressing information security within supplier agreements", "Organizational"),
-    ("A.5.21", "Managing information security in the ICT supply chain", "Organizational"),
-    ("A.5.22", "Monitoring, review and change management of supplier services", "Organizational"),
-    ("A.5.23", "Information security for use of cloud services", "Organizational"),
-    ("A.5.24", "Information security incident management planning and preparation", "Organizational"),
-    ("A.5.25", "Assessment and decision on information security events", "Organizational"),
-    ("A.5.26", "Response to information security incidents", "Organizational"),
-    ("A.5.27", "Learning from information security incidents", "Organizational"),
-    ("A.5.28", "Collection of evidence", "Organizational"),
-    ("A.5.29", "Information security during disruption", "Organizational"),
-    ("A.5.30", "ICT readiness for business continuity", "Organizational"),
-    ("A.5.31", "Legal, statutory, regulatory and contractual requirements", "Organizational"),
-    ("A.5.32", "Intellectual property rights", "Organizational"),
-    ("A.5.33", "Protection of records", "Organizational"),
-    ("A.5.34", "Privacy and protection of PII", "Organizational"),
-    ("A.5.35", "Independent review of information security", "Organizational"),
-    ("A.5.36", "Compliance with policies, rules and standards for information security", "Organizational"),
-    ("A.5.37", "Documented operating procedures", "Organizational"),
-    ("A.6.1", "Screening", "People"),
-    ("A.6.2", "Terms and conditions of employment", "People"),
-    ("A.6.3", "Information security awareness, education and training", "People"),
-    ("A.6.4", "Disciplinary process", "People"),
-    ("A.6.5", "Responsibilities after termination or change of employment", "People"),
-    ("A.6.6", "Confidentiality or non-disclosure agreements", "People"),
-    ("A.6.7", "Remote working", "People"),
-    ("A.6.8", "Information security event reporting", "People"),
-    ("A.7.1", "Physical security perimeters", "Physical"),
-    ("A.7.2", "Physical entry", "Physical"),
-    ("A.7.3", "Securing offices, rooms and facilities", "Physical"),
-    ("A.7.4", "Physical security monitoring", "Physical"),
-    ("A.7.5", "Protecting against physical and environmental threats", "Physical"),
-    ("A.7.6", "Working in secure areas", "Physical"),
-    ("A.7.7", "Clear desk and clear screen", "Physical"),
-    ("A.7.8", "Equipment siting and protection", "Physical"),
-    ("A.7.9", "Security of assets off-premises", "Physical"),
-    ("A.7.10", "Storage media", "Physical"),
-    ("A.7.11", "Supporting utilities", "Physical"),
-    ("A.7.12", "Cabling security", "Physical"),
-    ("A.7.13", "Equipment maintenance", "Physical"),
-    ("A.7.14", "Secure disposal or re-use of equipment", "Physical"),
-    ("A.8.1", "User endpoint devices", "Technological"),
-    ("A.8.2", "Privileged access rights", "Technological"),
-    ("A.8.3", "Information access restriction", "Technological"),
-    ("A.8.4", "Access to source code", "Technological"),
-    ("A.8.5", "Secure authentication", "Technological"),
-    ("A.8.6", "Capacity management", "Technological"),
-    ("A.8.7", "Protection against malware", "Technological"),
-    ("A.8.8", "Management of technical vulnerabilities", "Technological"),
-    ("A.8.9", "Configuration management", "Technological"),
-    ("A.8.10", "Information deletion", "Technological"),
-    ("A.8.11", "Data masking", "Technological"),
-    ("A.8.12", "Data leakage prevention", "Technological"),
-    ("A.8.13", "Information backup", "Technological"),
-    ("A.8.14", "Redundancy of information processing facilities", "Technological"),
-    ("A.8.15", "Logging", "Technological"),
-    ("A.8.16", "Monitoring activities", "Technological"),
-    ("A.8.17", "Clock synchronization", "Technological"),
-    ("A.8.18", "Use of privileged utility programs", "Technological"),
-    ("A.8.19", "Installation of software on operational systems", "Technological"),
-    ("A.8.20", "Networks security", "Technological"),
-    ("A.8.21", "Security of network services", "Technological"),
-    ("A.8.22", "Segregation of networks", "Technological"),
-    ("A.8.23", "Web filtering", "Technological"),
-    ("A.8.24", "Use of cryptography", "Technological"),
-    ("A.8.25", "Secure development life cycle", "Technological"),
-    ("A.8.26", "Application security requirements", "Technological"),
-    ("A.8.27", "Secure system architecture and engineering principles", "Technological"),
-    ("A.8.28", "Secure coding", "Technological"),
-    ("A.8.29", "Security testing in development and acceptance", "Technological"),
-    ("A.8.30", "Outsourced development", "Technological"),
-    ("A.8.31", "Separation of development, test and production environments", "Technological"),
-    ("A.8.32", "Change management", "Technological"),
-    ("A.8.33", "Test information", "Technological"),
-    ("A.8.34", "Protection of information systems during audit testing", "Technological"),
+SOC2_CONTROLS = [
+    ("CC1", "Control Environment", "Common Criteria"),
+    ("CC2", "Communication and Information", "Common Criteria"),
+    ("CC3", "Risk Assessment", "Common Criteria"),
+    ("CC4", "Monitoring Activities", "Common Criteria"),
+    ("CC5", "Control Activities", "Common Criteria"),
+    ("CC6", "Logical and Physical Access Controls", "Common Criteria"),
+    ("CC7", "System Operations", "Common Criteria"),
+    ("CC8", "Change Management", "Common Criteria"),
+    ("CC9", "Risk Mitigation", "Common Criteria"),
+    ("A1", "Availability", "Availability"),
+    ("C1", "Confidentiality", "Confidentiality"),
+    ("PI1", "Processing Integrity", "Processing Integrity"),
+    ("P1", "Privacy", "Privacy"),
 ]
 
+GDPR_ARTICLES = [
+    ("Art.5", "Principles relating to processing of personal data", "Core principles"),
+    ("Art.6", "Lawfulness of processing", "Lawful basis"),
+    ("Art.7", "Conditions for consent", "Consent"),
+    ("Art.12", "Transparent information and communication", "Transparency"),
+    ("Art.13", "Information to be provided where data is collected", "Transparency"),
+    ("Art.14", "Information to be provided where data not obtained", "Transparency"),
+    ("Art.15", "Right of access by the data subject", "Data subject rights"),
+    ("Art.16", "Right to rectification", "Data subject rights"),
+    ("Art.17", "Right to erasure (right to be forgotten)", "Data subject rights"),
+    ("Art.18", "Right to restriction of processing", "Data subject rights"),
+    ("Art.20", "Right to data portability", "Data subject rights"),
+    ("Art.24", "Responsibility of the controller", "Governance"),
+    ("Art.25", "Data protection by design and by default", "Governance"),
+    ("Art.28", "Processor obligations", "Third parties"),
+    ("Art.30", "Records of processing activities", "Documentation"),
+    ("Art.32", "Security of processing", "Security"),
+    ("Art.33", "Notification of a personal data breach to the supervisory authority", "Breach"),
+    ("Art.34", "Communication of a personal data breach to the data subject", "Breach"),
+    ("Art.35", "Data protection impact assessment (DPIA)", "Assessment"),
+    ("Art.37", "Designation of the data protection officer (DPO)", "Governance"),
+]
 
-NIST_CSF_FUNCTIONS = [
-    ("GV", "Govern", "Establish and monitor the organization cybersecurity risk management strategy"),
-    ("ID", "Identify", "Understand the organization assets, risks and current protections"),
-    ("PR", "Protect", "Implement safeguards to manage identified risks"),
-    ("DE", "Detect", "Find and analyze possible cybersecurity attacks and compromises"),
-    ("RS", "Respond", "Take action regarding a detected cybersecurity incident"),
-    ("RC", "Recover", "Restore assets and operations affected by a cybersecurity incident"),
+NIS2_ARTICLES = [
+    ("Art.20", "Governance - management body obligations", "Governance"),
+    ("Art.21", "Cybersecurity risk-management measures", "Risk management"),
+    ("Art.23", "Reporting obligations - incident notification", "Incidents"),
+    ("Art.24", "Use of European cybersecurity certification schemes", "Certification"),
+    ("Art.25", "Standardization", "Standards"),
+    ("Art.27", "Cybersecurity training and exercises", "People"),
+    ("Art.28", "Cybersecurity awareness and basic hygiene", "People"),
+    ("Art.29", "Information sharing arrangements", "Cooperation"),
+    ("Art.30", "Voluntary notification of significant incidents", "Incidents"),
+    ("Art.32", "Supervisory and enforcement measures", "Governance"),
+]
+
+PCI_DSS_REQUIREMENTS = [
+    ("Req.1", "Install and maintain network security controls", "Network"),
+    ("Req.2", "Apply secure configurations to all system components", "Configuration"),
+    ("Req.3", "Protect stored account data", "Data protection"),
+    ("Req.4", "Protect cardholder data with strong cryptography during transmission", "Data protection"),
+    ("Req.5", "Protect all systems and networks from malicious software", "Malware"),
+    ("Req.6", "Develop and maintain secure systems and software", "Development"),
+    ("Req.7", "Restrict access to system components and cardholder data by business need to know", "Access control"),
+    ("Req.8", "Identify users and authenticate access to system components", "Access control"),
+    ("Req.9", "Restrict physical access to cardholder data", "Physical"),
+    ("Req.10", "Log and monitor all access to system components and cardholder data", "Logging"),
+    ("Req.11", "Test security of systems and networks regularly", "Testing"),
+    ("Req.12", "Support information security with organizational policies and programs", "Governance"),
+]
+
+ISO27005_CLAUSES = [
+    ("5.1", "Information security risk management process - establish, implement, maintain, continually improve", "Process"),
+    ("5.2", "Alignment with other information security management standards", "Integration"),
+    ("5.3", "Critical success factors for information security risk management", "Governance"),
+    ("6.2", "Communication and consultation on risk with stakeholders", "Communication"),
+    ("6.3.1", "External context of the organization (legal, regulatory, market)", "Context"),
+    ("6.3.2", "Internal context of the organization (governance, capabilities, culture)", "Context"),
+    ("6.3.3", "Risk criteria - risk appetite, tolerance, impact and likelihood scales", "Context"),
+    ("6.4.1", "Risk identification process", "Identification"),
+    ("6.4.2", "Identification of assets and their owners", "Identification"),
+    ("6.4.3", "Identification of threats and threat sources", "Identification"),
+    ("6.4.4", "Identification of vulnerabilities and existing controls", "Identification"),
+    ("6.5", "Risk analysis - determine likelihood, impact and level of risk", "Analysis"),
+    ("6.6", "Risk evaluation - compare with risk criteria and prioritize", "Evaluation"),
+    ("6.7", "Risk treatment - select and document treatment options with controls", "Treatment"),
+    ("6.8", "Risk acceptance - formally accept residual risks with sign-off", "Acceptance"),
+    ("6.9", "Risk monitoring and review - ongoing and periodic activities", "Monitoring"),
+    ("6.10", "Recording and reporting of risk management activities", "Documentation"),
+]
+
+ISO22301_CLAUSES = [
+    ("4", "Context of the organization", "Context"),
+    ("5", "Leadership", "Leadership"),
+    ("6", "Planning", "Planning"),
+    ("7", "Support", "Support"),
+    ("8.2", "Business impact analysis and risk assessment", "Operation"),
+    ("8.3", "Business continuity strategies and solutions", "Operation"),
+    ("8.4", "Business continuity plans and procedures", "Operation"),
+    ("8.5", "Exercise programme", "Operation"),
+    ("9", "Performance evaluation", "Evaluation"),
+    ("10", "Improvement", "Improvement"),
 ]
 
 
 class Command(BaseCommand):
-    help = "Seed frameworks (ISO 27001:2022, NIST CSF 2.0) for every organization. Idempotent."
+    help = (
+        "Seed frameworks for every organization. "
+        "Use --frameworks to select: iso27001, nist_csf, soc2, gdpr, nis2, "
+        "pci_dss, iso22301, or 'all' (default). "
+        "Use --list to see available codes."
+    )
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--frameworks",
+            default="all",
+            help="Comma-separated codes to seed, or 'all' (default), or 'none'.",
+        )
+        parser.add_argument(
+            "--list",
+            action="store_true",
+            help="Only list available framework codes and exit.",
+        )
+
+    ALL_CODES = ["iso27001", "iso27005", "nist_csf", "soc2", "gdpr", "nis2", "pci_dss", "iso22301"]
 
     def handle(self, *args, **opts):
-        for org in Organization.objects.all():
-            self._seed_iso27001(org)
-            self._seed_nist_csf(org)
+        if opts.get("list"):
+            self.stdout.write("Available framework codes:")
+            for code in self.ALL_CODES:
+                self.stdout.write(f"  - {code}")
+            return
 
+        selected = opts["frameworks"]
+        if selected == "all":
+            codes = list(self.ALL_CODES)
+        elif selected == "none" or not selected:
+            codes = []
+        else:
+            codes = [x.strip() for x in selected.split(",") if x.strip()]
+
+        for org in Organization.objects.all():
+            for code in codes:
+                seed_fn = getattr(self, f"_seed_{code}", None)
+                if seed_fn:
+                    seed_fn(org)
+                else:
+                    self.stdout.write(self.style.WARNING(
+                        f"[{org.slug}] Unknown framework code: {code}"
+                    ))
+
+
+    # ---- ISO 27001 ----
     def _seed_iso27001(self, org):
         framework, _ = Framework.objects.get_or_create(
             organization=org, code="iso27001",
@@ -171,4 +206,58 @@ class Command(BaseCommand):
                 count += 1
         self.stdout.write(self.style.SUCCESS(
             f"[{org.slug}] NIST CSF 2.0 - {count} new requirements"
+        ))
+
+
+    # ---- New frameworks ----
+    def _seed_soc2(self, org):
+        self._seed_simple(org, code="soc2", name="SOC 2", category="Security",
+                          source_url="https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2",
+                          version="2023", requirements=SOC2_CONTROLS)
+
+    def _seed_gdpr(self, org):
+        self._seed_simple(org, code="gdpr", name="GDPR", category="Privacy",
+                          source_url="https://eur-lex.europa.eu/eli/reg/2016/679/oj",
+                          version="2016/679", requirements=GDPR_ARTICLES)
+
+    def _seed_nis2(self, org):
+        self._seed_simple(org, code="nis2", name="NIS2 Directive", category="Cybersecurity",
+                          source_url="https://eur-lex.europa.eu/eli/dir/2022/2555/oj",
+                          version="2022/2555", requirements=NIS2_ARTICLES)
+
+    def _seed_pci_dss(self, org):
+        self._seed_simple(org, code="pci_dss", name="PCI DSS", category="Payments",
+                          source_url="https://www.pcisecuritystandards.org/",
+                          version="4.0", requirements=PCI_DSS_REQUIREMENTS)
+
+    def _seed_iso22301(self, org):
+        self._seed_simple(org, code="iso22301", name="ISO 22301", category="Business Continuity",
+                          source_url="https://www.iso.org/standard/75106.html",
+                          version="2019", requirements=ISO22301_CLAUSES)
+
+    def _seed_iso27005(self, org):
+        self._seed_simple(org, code="iso27005", name="ISO/IEC 27005", category="Risk Management",
+                          source_url="https://www.iso.org/standard/80585.html",
+                          version="2022", requirements=ISO27005_CLAUSES)
+
+    def _seed_simple(self, org, code, name, category, source_url, version, requirements):
+        framework, _ = Framework.objects.get_or_create(
+            organization=org, code=code,
+            defaults={"name": name, "category": category,
+                      "source_url": source_url, "is_system": True},
+        )
+        fv, _ = FrameworkVersion.objects.get_or_create(
+            framework=framework, version=version,
+            defaults={"published_at": date(2023, 1, 1), "is_active": True},
+        )
+        count = 0
+        for idx, (rcode, rtitle, rcat) in enumerate(requirements):
+            _, created = Requirement.objects.get_or_create(
+                framework_version=fv, code=rcode,
+                defaults={"title": rtitle, "category": rcat, "order": idx},
+            )
+            if created:
+                count += 1
+        self.stdout.write(self.style.SUCCESS(
+            f"[{org.slug}] {name} {version} - {count} new requirements"
         ))
