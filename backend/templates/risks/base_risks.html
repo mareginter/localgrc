@@ -82,8 +82,7 @@
           {% endfor %}
         </select>
       </form>
-    {% elif active_organization %}
-      <span class="topbar-admin">{{ active_organization.name }}</span>
+
     {% endif %}
     <div class="topbar-account">
       {% if request.user.is_authenticated %}

@@ -68,7 +68,7 @@
   <div class="dash-hero">
       <div style="display:flex;align-items:center;gap:1rem;">
         {% if org.logo_url %}
-          <img src="{{ org.logo_url }}" alt="{{ org.display_name }}" style="max-height:56px;border-radius:6px;">
+          <img src="{{ org.logo_url }}" alt="" onerror="this.style.display='none'" style="max-height:56px;border-radius:6px;">
         {% endif %}
         <div>
           <h1>{{ org.display_name }}</h1>

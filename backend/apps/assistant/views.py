@@ -10,8 +10,9 @@ from django.views.decorators.http import require_POST
 from apps.core.access import get_active_organization, require_org_roles
 
 from . import rag
-from .client import generate_stream
+from .client import generate_stream, get_client
 from .models import Document, DocumentChunk
+from .tools import TOOL_DEFINITIONS, ToolExecutor
 
 logger = logging.getLogger(__name__)
 MAX_MESSAGE_CHARS = 8000
@@ -28,7 +29,17 @@ def assistant_home(request):
 @login_required
 def assistant_health(request):
     get_active_organization(request)
-    return JsonResponse({"status": "ok"})
+    client = get_client()
+    available = client.is_available()
+    models = client.list_models() if available else []
+    return JsonResponse({
+        "available": available,
+        "host": client.host,
+        "configured_model": client.model,
+        "models_installed": models,
+        "model_ready": client.ensure_model() if available else False,
+        "tools_available": len(TOOL_DEFINITIONS),
+    })
 
 
 @login_required
@@ -45,6 +56,8 @@ def assistant_stream(request):
 
     user_message = data.get("message")
     history = data.get("history", [])
+    use_tools = data.get("use_tools", True)
+
     if not isinstance(user_message, str) or not user_message.strip():
         return JsonResponse({"error": "A message is required."}, status=400)
     if len(user_message) > MAX_MESSAGE_CHARS:
@@ -64,9 +77,13 @@ def assistant_stream(request):
             return JsonResponse({"error": "Conversation history item is too long."}, status=413)
         validated_history.append({"role": role, "content": content})
 
+    # 1. RAG Context retrieval (Original logic)
     context = rag.search_context(user_message, organization)
     system_prompt = (
-        "És um assistente GRC especialista. Responde de forma profissional e clara em português."
+        "És um assistente GRC especialista. Responde de forma profissional e clara em português. "
+        "Tens acesso a ferramentas (tools) que consultam a base de dados em tempo real. "
+        "Usa essas ferramentas SEMPRE que a pergunta envolver riscos, controlos, políticas, "
+        "auditorias, incidentes ou vulnerabilidades. Não inventes dados."
     )
     if context:
         system_prompt += (
@@ -79,6 +96,59 @@ def assistant_stream(request):
     chat_messages.append({"role": "user", "content": user_message.strip()})
 
     def event_stream():
+        client = get_client()
+
+        # 2. Tool Loop (Nova lógica)
+        if use_tools and organization:
+            try:
+                executor = ToolExecutor(organization, request.user)
+                for _ in range(5):  # max iterations
+                    response = client.chat_with_tools(chat_messages, TOOL_DEFINITIONS)
+                    
+                    # Normalize SDK response (dict or Pydantic)
+                    if isinstance(response, dict):
+                        msg = response.get("message", {})
+                    else:
+                        msg = getattr(response, "message", None)
+                        if hasattr(msg, "model_dump"):
+                            msg = msg.model_dump()
+                        elif msg is None:
+                            msg = {}
+
+                    tool_calls = msg.get("tool_calls", [])
+                    if not tool_calls:
+                        break
+
+                    # Append assistant's intention to call tools
+                    chat_messages.append(msg)
+
+                    for tc in tool_calls:
+                        # Parse tool call data
+                        fn = tc.get("function", {}) if isinstance(tc, dict) else getattr(tc, "function", {})
+                        name = fn.get("name") if isinstance(fn, dict) else getattr(fn, "name", "")
+                        args = fn.get("arguments") if isinstance(fn, dict) else getattr(fn, "arguments", {})
+                        
+                        if isinstance(args, str):
+                            try: args = json.loads(args)
+                            except json.JSONDecodeError: args = {}
+
+                        yield f"data: {json.dumps({'status': f'A consultar dados: {name}...'})}\n\n"
+                        
+                        # Execute tool
+                        result = executor.execute(name, args)
+                        
+                        # Feed result back to model
+                        chat_messages.append({
+                            "role": "tool",
+                            "content": result,
+                            "name": name
+                        })
+            except Exception:
+                logger.exception("Tool loop failed for user %s", request.user.pk)
+                yield f"data: {json.dumps({'error': 'The assistant could not query the database.'})}\n\n"
+                return
+
+        # 3. Stream Final Answer
         try:
             for chunk in generate_stream(chat_messages):
                 if "message" in chunk and "content" in chunk["message"]:
@@ -86,7 +156,7 @@ def assistant_stream(request):
                     yield f"data: {json.dumps({'delta': delta})}\n\n"
             yield "data: [DONE]\n\n"
         except Exception:
-            logger.exception("Assistant stream failed for authenticated user %s", request.user.pk)
+            logger.exception("Assistant stream failed for user %s", request.user.pk)
             yield f"data: {json.dumps({'error': 'The assistant could not complete the request.'})}\n\n"
 
     response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
@@ -131,6 +201,6 @@ def document_upload(request):
                 DocumentChunk.objects.create(document=doc, text=chunk_text, embedding=embedding)
         messages.success(request, f"Document '{file.name}' processed successfully.")
     except Exception:
-        logger.exception("PDF upload or processing failed for authenticated user %s", request.user.pk)
+        logger.exception("PDF upload or processing failed for user %s", request.user.pk)
         messages.error(request, "The PDF could not be processed. Check the server logs.")
     return redirect("assistant_home")
